@@ -38,9 +38,10 @@ semMod = '
 # by grade
 iowaG1to6 = iowaReading %>% filter(Truegrade<=6)
 tapply(iowaG1to6, iowaG1to6$Truegrade
-#       , function(x) {cfa(semMod, x, missing="fiml", orthogonal=T, std.lv=T, std.ov=T) %>% parameterestimates() %>% filter(op=="=~")}
+       #       , function(x) {cfa(semMod, x, missing="fiml", orthogonal=T, std.lv=T, std.ov=T) %>% parameterestimates() %>% filter(op=="=~")}
        , function(x) {cfa(semMod2, x, missing="fiml", orthogonal=T, std.lv=T, std.ov=T) %>% lavPredict %>% psych::describe()}
 ) %>% bind_rows()
+
 
 ### Split the CC2s
 semMod2 = '
@@ -50,3 +51,4 @@ semMod2 = '
 tapply(iowaG1to6, iowaG1to6$Truegrade
        , function(x) {cfa(semMod2, x, missing="fiml", orthogonal=T, std.lv=T, std.ov=T) %>% lavPredict %>% psych::describe()}
 ) %>% bind_rows()
+

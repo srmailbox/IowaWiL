@@ -1,5 +1,5 @@
 ###############################################################################
-# iowa Project - Bob
+# Iowa Project
 # 
 # This script is to develop a measurement model for the shared book reading
 # measures. There are items related to Frequency/duration, some that seem to be
