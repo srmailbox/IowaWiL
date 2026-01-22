@@ -107,7 +107,7 @@ for (var in colnames(iowaEnv)[which(substr(colnames(iowaEnv), 1, 4)=="dura")]) {
 # We pre-registered just using the mean of the 5 CMQ items:
 #  - I do not appear to have this data available to me.
 
-### 1.2.4.2 Frequency (Shared Book Reading & Independent Reading) ####
+#### 1.2.4.2 Frequency (Shared Book Reading & Independent Reading) ####
 # We had decided to use the results from a latent variable model with 
 # Independent Reading and child-active SBR as the main measures of frequency.
 # (that is, only consider reading where the child is actively reading, not
@@ -120,7 +120,7 @@ cfaFreqModel = '
 childSBR =~ child_read_out_loud+child_read_picture_book+child_read_comics+child_read_chapter_books+child_read_nonfiction
 
 # F2 - independent reading: read_alone, ..._chapter_book, initiate_read_alone (nonschool_related, duration_read_alone)
-IR =~ read_alone+read_alone_chapter_books+read_alone_comics+initiate_read_alone+reading_nonschool_related+duration_read_alone_mins
+IR =~ read_alone+read_alone_chapter_books+read_alone_comics+initiate_read_alone#+reading_nonschool_related+duration_read_alone_mins
 
 # F3 - parent reading to child: parent_read_out_loud, .._chapter_books (picture_books, nonfiction)
 # prntSBR =~ parent_read_out_loud+parent_read_chapter_books#+parent_read_picture_books+parent_read_nonfiction#+parent_read_comics
@@ -133,13 +133,14 @@ childSBR~~IR #+ prntSBR
 cfaData = iowaEnv %>% 
   drop_na(child_read_out_loud,child_read_picture_book,child_read_comics,
           child_read_chapter_books,child_read_nonfiction,read_alone
-          ,read_alone_chapter_books,read_alone_comics,initiate_read_alone,
-          reading_nonschool_related,duration_read_alone_mins)
+          ,read_alone_chapter_books,read_alone_comics,initiate_read_alone
+          # ,reading_nonschool_related,duration_read_alone_mins
+          )
 
 iowa.cfaFreq = sem(cfaFreqModel, data=cfaData, std.ov = T)
 
 #fitmeasures(iowa.cfaFreq, fit.measures = c("srmr", "cfi", "agfi", "rmsea"))
-# mediocre fit, really
+# mediocre fits, really
 
 # Assign scores to kids and years
 cfaRes = cbind(
@@ -156,3 +157,4 @@ iowaReading = read_xlsx("ReadAnx_Scores.xlsx", sheet="ReadAnx_Scores") %>%
 
 iowaData = merge(iowaEnv, iowaReading, by.x=c("participant", "Grade")
                  , by.y=c("participantID", "Truegrade"), all=T)
+

@@ -187,10 +187,10 @@ cfaRevModel = '
 childSBR =~ child_read_out_loud+child_read_picture_book+child_read_comics+child_read_chapter_books+child_read_nonfiction
 
 # F2 - independent reading: read_alone, ..._chapter_book, initiate_read_alone (nonschool_related, duration_read_alone)
-IR =~ read_alone+read_alone_chapter_books+read_alone_comics+initiate_read_alone+reading_nonschool_related+duration_read_alone_mins
+IR =~ read_alone+read_alone_chapter_books+read_alone_comics+initiate_read_alone#+reading_nonschool_related+duration_read_alone_mins
 
 # F3 - parent reading to child: parent_read_out_loud, .._chapter_books (picture_books, nonfiction)
-prntSBR =~ parent_read_out_loud+parent_read_chapter_books#+parent_read_picture_books+parent_read_nonfiction#+parent_read_comics
+prntSBR =~ parent_read_out_loud+parent_read_chapter_books+parent_read_picture_books+parent_read_nonfiction#+parent_read_comics
 
 # F4 - school work: homework, reading school related - IGNORED since homework includes more than just reading
 
@@ -204,7 +204,7 @@ SBR =~ child_read_out_loud+child_read_picture_book+child_read_comics+child_read_
       parent_read_out_loud+parent_read_chapter_books#+parent_read_picture_books+parent_read_nonfiction#+parent_read_comics
 
 # F2 - independent reading: read_alone, ..._chapter_book, initiate_read_alone (nonschool_related, duration_read_alone)
-IR =~ read_alone+read_alone_chapter_books+read_alone_comics+initiate_read_alone+reading_nonschool_related+duration_read_alone_mins
+IR =~ read_alone+read_alone_chapter_books+read_alone_comics+initiate_read_alone#+reading_nonschool_related+duration_read_alone_mins
 
 # F3 - parent reading to child: parent_read_out_loud, .._chapter_books (picture_books, nonfiction)
 #prntSBR =~ parent_read_out_loud+parent_read_chapter_books#+parent_read_picture_books+parent_read_nonfiction#+parent_read_comics
