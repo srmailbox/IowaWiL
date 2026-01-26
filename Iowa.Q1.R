@@ -11,6 +11,11 @@
 
 # 0.0 Setup ####
 include(lavaan)
+include(mice)
+include(semTools)
+
+# Randomly sample a seed
+# set.seed(-893456647)
 
 # 1.0 Read Data ####
 
@@ -121,4 +126,25 @@ Fsbr_6 ~~ RF_6
 
 q1SEM = cfa(q1SEMModel, q1SEMAnalysis, missing="fiml", orthogonal=T)
 
-# Seems to fit ok (by rmsea and cfi), but less well by srmr and agfi. Need to look into the "coverage" problem.
+# Warning message:
+#   lavaan->lav_data_full():  
+#   due to missing values, some pairwise combinations have zero coverage; the corresponding covariances are not identified; use lavInspect(fit, "coverage") to 
+# investigate. 
+
+# Ok, so of course if there is no "complete" data for a pair of variables, you
+# can't estimate the covariance for that pair (it is assumed to be zero) -
+# which can cause an issue for FIML which wants to adjust the covariances for
+# missing data. This happens a fair amount here because the study is not long 
+# enough for kids in gr1 to have data in gr 5 or 6, or for kids in gr2 to have 
+# data in gr6.
+
+# I think maybe I will try multiple imputation as an alternative just to see how
+# much that might matter. Imputation might not be smart enough to do this either
+# actually. I guess it depends on if it just uses whatever data it can, or if it
+# does listwise deletion as well.
+
+## 2.4 Multiple Imputation ####
+
+q1SEMmice = mice(q1SEMAnalysis %>% select(-ends_with("vals")), m=10)
+q1SEM.mi = cfa.mi(q1SEMModel, q1SEMmice, orthogonal=T)
+summary(q1SEM.mi)
