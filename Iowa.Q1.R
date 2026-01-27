@@ -15,7 +15,7 @@ include(mice)
 include(semTools)
 
 # Randomly sample a seed
-# set.seed(-893456647)
+set.seed(-893456647)
 
 # 1.0 Read Data ####
 
@@ -149,9 +149,31 @@ q1SEMmice = mice(q1SEMAnalysis %>% select(-ends_with("vals")), m=10)
 q1SEM.mi = cfa.mi(q1SEMModel, q1SEMmice, orthogonal=T)
 summary(q1SEM.mi)
 
+## 2.5 Fits ####
+fitmeasures(q1SEM.mi, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))
+fitmeasures(q1SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))
+
+# 4 out of 5 seem to prefer the MI approach:
+# srmr, rmsea, tli, cfi.
+# Only agfi prefers the FIML model.
+
 # 3.0 Output results ####
 
 merge(parameterEstimates(q1SEM)
       , parameterEstimates.mi(q1SEM.mi)
       , by=c("lhs", "op", "rhs"), suffixes=c(".fiml", ".mi")) %>%
   write.csv(file="Iowa.q1.results.csv")
+
+# From an NHST perspective, the two approaches only differ on two cross-lagged
+# paths - 
+# gr1 Independent Reading predicts gr2 Fluency for the MI model, but not
+# the FIML model. CIs: [-.3, -.025] MI vs [-.228, .034] FIML
+# gr3 Independent REading predicts gr4 FLuency for the FIML model, but not MI
+# CIs [-.03, .20] MI vs [.011, .158] FIML
+
+# While they disagree on significance, the CI's overlap considerably so this is
+# more about the sensitivity of p-values to analytic choices than it is about
+# anything more fundamentally structural.
+# 
+# There are three other reciprocal effects where the NHST is inconsistent. Again
+# the estimates and CI's are not insanely out of keeping with each other.
