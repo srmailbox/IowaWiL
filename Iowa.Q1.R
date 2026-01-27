@@ -148,3 +148,10 @@ q1SEM = cfa(q1SEMModel, q1SEMAnalysis, missing="fiml", orthogonal=T)
 q1SEMmice = mice(q1SEMAnalysis %>% select(-ends_with("vals")), m=10)
 q1SEM.mi = cfa.mi(q1SEMModel, q1SEMmice, orthogonal=T)
 summary(q1SEM.mi)
+
+# 3.0 Output results ####
+
+merge(parameterEstimates(q1SEM)
+      , parameterEstimates.mi(q1SEM.mi)
+      , by=c("lhs", "op", "rhs"), suffixes=c(".fiml", ".mi")) %>%
+  write.csv(file="Iowa.q1.results.csv")
