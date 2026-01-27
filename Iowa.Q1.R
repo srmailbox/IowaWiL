@@ -66,10 +66,10 @@ q1SEMAnalysis = q1SEMData  %>%
 q1SEMModel = '
 # Cross-lagged paths
 RF_2 ~ Fi_1+Fsbr_1
-RF_3 ~ Fi_1+Fsbr_2
-RF_4 ~ Fi_1+Fsbr_3
-RF_5 ~ Fi_1+Fsbr_4
-RF_6 ~ Fi_1+Fsbr_5
+RF_3 ~ Fi_2+Fsbr_2
+RF_4 ~ Fi_3+Fsbr_3
+RF_5 ~ Fi_4+Fsbr_4
+RF_6 ~ Fi_5+Fsbr_5
 
 Fi_2 ~ RF_1
 Fi_3 ~ RF_2
