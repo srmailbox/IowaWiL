@@ -8,6 +8,8 @@
 # Created: 2026-01-22
 # Author: Serje Robidoux
 # CHANGELOG:
+# 2026-01-28: Massive overhaul to split the analysis into gr1-3, and gr4-6 to
+#   overcome an issue with missingness in the covariance structures.
 
 # 0.0 Setup ####
 include(lavaan)
@@ -22,31 +24,41 @@ set.seed(-893456647)
 
 source("Iowa.Data.R")
 
-## need to add "Interest" at some point.
-q1Data = iowaData %>% select(participant, Grade, Fi, Fsbr, GORT_Fluency)
+q1Data = iowaData %>% select(participant, Grade, Fi, Fsbr, GORT_Fluency) %>% 
+  filter(Grade < 7)
 
-## 1.1 Reshape to be "wide" ####
+## 1.1 Add the earliest grade, and number of years of participation ###
 
-q1SEMData = q1Data %>% 
-  filter(Grade<=6) %>% 
+q1Data = q1Data %>% 
+  group_by(participant) %>% 
+  mutate(
+    startGrade = min(Grade)
+    , nYears=n()
+  ) %>% ungroup() %>% 
+  mutate(
+    incl13 = Grade %in% 1:3 #startGrade<3 & nYears>1
+    , incl46 = Grade %in% 4:6 #startGrade>2 & nYears>1
+  )
+
+## 1.3 Split Data into grs 1-3 and 4-6 and reshape ####
+
+q1.gr13.SEMData = q1Data %>% 
+  filter(incl13) %>% 
   rename(RF = GORT_Fluency)  %>% 
   # Note that the gort is currently on a 100 +/-15 scale, so I'm going to
   # standardise those
   mutate(RF = (RF-100)/15) %>% 
   pivot_wider(id_cols=participant, values_from=c(Fi, Fsbr, RF), names_from=Grade)
 
-# 2.0 Fit the Model ####
-## 2.1 Data Availability ####
-# I only want participants who provide all variables at least once, and at least
-# one variable twice.
-# That is they have at least 1 value for each of independent reading, shared 
-# book reading and reading fluency, and at least one of them is measured twice.
+q1.gr46.SEMData = q1Data %>% 
+  filter(incl46) %>% 
+  rename(RF = GORT_Fluency)  %>% 
+  # Note that the gort is currently on a 100 +/-15 scale, so I'm going to
+  # standardise those
+  mutate(RF = (RF-100)/15) %>% 
+  pivot_wider(id_cols=participant, values_from=c(Fi, Fsbr, RF), names_from=Grade)
 
-# note rowMins/rowMaxes are custom functions
-# rowMins = function(x, ...) { apply(x, 1, min, ...) }
-# rowMaxes = function(x, ...) { apply(x, 1, max, ...) }
-
-q1SEMAnalysis = q1SEMData  %>% 
+q1.gr13.SEMAnalysis = q1.gr13.SEMData  %>% 
   mutate(Fi_vals=rowSums(!is.na(select(., starts_with("Fi"))))
          , Fsbr_vals=rowSums(!is.na(select(., starts_with("Fsbr"))))
          , RF_vals=rowSums(!is.na(select(., starts_with("RF"))))
@@ -55,53 +67,77 @@ q1SEMAnalysis = q1SEMData  %>%
          ,two_years = rowMaxes(select(.,ends_with("vals")))>1
          ) %>% 
   filter(all_vars) %>%
-  filter(two_years) %>%
-  select(-ends_with("_vars"), -two_years)
+  # filter(two_years) %>% select(-two_years) %>% 
+  select(-ends_with("_vars"))
 
-# Costs me 21 participants - 4 because there is at least one variable that they
-# do not have data for at all, and an additional 17 because they didn't provide
-# data in at least two years.
+# Requiring that each participant provides each var at least once Costs me 19 
+# participants - 13 because they do not have SBR data, and 6 because they do not
+# have GORT FLuency data. (1 because they provide no data at all)
+# 
+# After excluding them, there is still around 38% missingness across the dataset
+# RF_2   RF_3   Fi_2   Fi_3 Fsbr_2 Fsbr_3   Fi_1 Fsbr_1   RF_1 
+# 0.337  0.075  0.356  0.075  0.356  0.075  0.742  0.742  0.648 
 
-## 2.2 Model ####
+q1.gr46.SEMAnalysis = q1.gr46.SEMData  %>% 
+  mutate(Fi_vals=rowSums(!is.na(select(., starts_with("Fi"))))
+         , Fsbr_vals=rowSums(!is.na(select(., starts_with("Fsbr"))))
+         , RF_vals=rowSums(!is.na(select(., starts_with("RF"))))
+  ) %>% 
+  mutate(all_vars = rowMins(select(., ends_with("vals")))>0
+         ,two_years = rowMaxes(select(.,ends_with("vals")))>1
+  ) %>% 
+  filter(all_vars) %>%
+  # filter(two_years) %>% select(-two_years) %>% 
+  select(-ends_with("_vars"))
 
-q1SEMModel = '
+# Requiring that each participant provides each var at least once costs me 14 
+# participants - 13 because they do not have GORT Fluencydata, and 1 because 
+# they do not have SBR data.
+# 
+# Overall, less missingness here although it's still 31%
+#   RF_5   RF_6   Fi_5   Fi_6 Fsbr_5 Fsbr_6   Fi_4 Fsbr_4   RF_4 
+# 0.167  0.445  0.339  0.661  0.339  0.661  0.061  0.061  0.016 
+
+## 2.2 Models ####
+
+q1.gr13.SEMModel = '
 # Cross-lagged paths
 RF_2 ~ Fi_1+Fsbr_1
 RF_3 ~ Fi_2+Fsbr_2
-RF_4 ~ Fi_3+Fsbr_3
-RF_5 ~ Fi_4+Fsbr_4
-RF_6 ~ Fi_5+Fsbr_5
+# RF_4 ~ Fi_3+Fsbr_3
+# RF_5 ~ Fi_4+Fsbr_4
+# RF_6 ~ Fi_5+Fsbr_5
 
 Fi_2 ~ RF_1
 Fi_3 ~ RF_2
-Fi_4 ~ RF_3
-Fi_5 ~ RF_4
-Fi_6 ~ RF_5
+# Fi_4 ~ RF_3
+# Fi_5 ~ RF_4
+# Fi_6 ~ RF_5
 
 Fsbr_2 ~ RF_1
 Fsbr_3 ~ RF_2
-Fsbr_4 ~ RF_3
-Fsbr_5 ~ RF_4
-Fsbr_6 ~ RF_5
+# Fsbr_4 ~ RF_3
+# Fsbr_5 ~ RF_4
+# Fsbr_6 ~ RF_5
 
 # Auto-regressive paths (Stability)
 RF_2 ~ RF_1
 RF_3 ~ RF_2
-RF_4 ~ RF_3
-RF_5 ~ RF_4
-RF_6 ~ RF_5
+# RF_4 ~ RF_3
+# RF_5 ~ RF_4
+# RF_6 ~ RF_5
 
 Fi_2 ~ Fi_1
 Fi_3 ~ Fi_2
-Fi_4 ~ Fi_3
-Fi_5 ~ Fi_4
-Fi_6 ~ Fi_5
+# Fi_4 ~ Fi_3
+# Fi_5 ~ Fi_4
+# Fi_6 ~ Fi_5
 
 Fsbr_2 ~ Fsbr_1
 Fsbr_3 ~ Fsbr_2
-Fsbr_4 ~ Fsbr_3
-Fsbr_5 ~ Fsbr_4
-Fsbr_6 ~ Fsbr_5
+# Fsbr_4 ~ Fsbr_3
+# Fsbr_5 ~ Fsbr_4
+# Fsbr_6 ~ Fsbr_5
 
 # Reciprocal effects
 Fi_1 ~~ RF_1 + Fsbr_1
@@ -112,6 +148,65 @@ Fsbr_2 ~~ RF_2
 
 Fi_3 ~~ RF_3 + Fsbr_3
 Fsbr_3 ~~ RF_3
+
+# Fi_4 ~~ RF_4 + Fsbr_4
+# Fsbr_4 ~~ RF_4
+# 
+# Fi_5 ~~ RF_5 + Fsbr_5
+# Fsbr_5 ~~ RF_5
+# 
+# Fi_6 ~~ RF_6 + Fsbr_6
+# Fsbr_6 ~~ RF_6
+'
+
+q1.gr46.SEMModel = '
+# Cross-lagged paths
+# RF_2 ~ Fi_1+Fsbr_1
+# RF_3 ~ Fi_2+Fsbr_2
+# RF_4 ~ Fi_3+Fsbr_3
+RF_5 ~ Fi_4+Fsbr_4
+RF_6 ~ Fi_5+Fsbr_5
+
+# Fi_2 ~ RF_1
+# Fi_3 ~ RF_2
+# Fi_4 ~ RF_3
+Fi_5 ~ RF_4
+Fi_6 ~ RF_5
+
+# Fsbr_2 ~ RF_1
+# Fsbr_3 ~ RF_2
+# Fsbr_4 ~ RF_3
+Fsbr_5 ~ RF_4
+Fsbr_6 ~ RF_5
+
+# Auto-regressive paths (Stability)
+# RF_2 ~ RF_1
+# RF_3 ~ RF_2
+# RF_4 ~ RF_3
+RF_5 ~ RF_4
+RF_6 ~ RF_5
+
+# Fi_2 ~ Fi_1
+# Fi_3 ~ Fi_2
+# Fi_4 ~ Fi_3
+Fi_5 ~ Fi_4
+Fi_6 ~ Fi_5
+
+# Fsbr_2 ~ Fsbr_1
+# Fsbr_3 ~ Fsbr_2
+# Fsbr_4 ~ Fsbr_3
+Fsbr_5 ~ Fsbr_4
+Fsbr_6 ~ Fsbr_5
+
+# Reciprocal effects
+# Fi_1 ~~ RF_1 + Fsbr_1
+# Fsbr_1 ~~ RF_1
+# 
+# Fi_2 ~~ RF_2 + Fsbr_2
+# Fsbr_2 ~~ RF_2
+# 
+# Fi_3 ~~ RF_3 + Fsbr_3
+# Fsbr_3 ~~ RF_3
 
 Fi_4 ~~ RF_4 + Fsbr_4
 Fsbr_4 ~~ RF_4
@@ -125,56 +220,40 @@ Fsbr_6 ~~ RF_6
 
 ## 2.3 Fitting ####
 
-q1SEM = cfa(q1SEMModel, q1SEMAnalysis, missing="fiml", orthogonal=T)
+q1.gr13.SEM = cfa(q1.gr13.SEMModel, q1.gr13.SEMAnalysis, missing="fiml", orthogonal=T)
 
-# Warning message:
-#   lavaan->lav_data_full():  
-#   due to missing values, some pairwise combinations have zero coverage; the corresponding covariances are not identified; use lavInspect(fit, "coverage") to 
-# investigate. 
+q1.gr46.SEM = cfa(q1.gr46.SEMModel, q1.gr46.SEMAnalysis, missing="fiml", orthogonal=T)
 
-# Ok, so of course if there is no "complete" data for a pair of variables, you
-# can't estimate the covariance for that pair (it is assumed to be zero) -
-# which can cause an issue for FIML which wants to adjust the covariances for
-# missing data. This happens a fair amount here because the study is not long 
-# enough for kids in gr1 to have data in gr 5 or 6, or for kids in gr2 to have 
-# data in gr6.
-
-# I think maybe I will try multiple imputation as an alternative just to see how
-# much that might matter. Imputation might not be smart enough to do this either
-# actually. I guess it depends on if it just uses whatever data it can, or if it
-# does listwise deletion as well.
-
-## 2.4 Multiple Imputation ####
-
-q1SEMmice = mice(q1SEMAnalysis %>% select(-ends_with("vals")), m=10)
-q1SEM.mi = cfa.mi(q1SEMModel, q1SEMmice, orthogonal=T)
-summary(q1SEM.mi)
 
 ## 2.5 Fits ####
-fitmeasures(q1SEM.mi, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))
-fitmeasures(q1SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))
+rbind(gr13=fitmeasures(q1.gr13.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))
+, gr46=fitmeasures(q1.gr46.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi")))
 
-# 4 out of 5 seem to prefer the MI approach:
-# srmr, rmsea, tli, cfi.
-# Only agfi prefers the FIML model.
+# Not terrible, but not great either:
+#      rmsea  srmr   tli   cfi  agfi
+# gr13 0.082 0.074 0.887 0.959 0.720
+# gr46 0.090 0.062 0.904 0.965 0.785
+# 
+# SRMR is good, RMSEA marginal, TLI borderline, CFI good, AGFI weak
 
 # 3.0 Output results ####
 
-merge(parameterEstimates(q1SEM)
-      , parameterEstimates.mi(q1SEM.mi)
-      , by=c("lhs", "op", "rhs"), suffixes=c(".fiml", ".mi")) %>%
+merge(parameterEstimates(q1.gr13.SEM)
+      , parameterEstimates(q1.gr46.SEM) %>% 
+        mutate(
+          rhs=
+            factor(
+              rhs
+              , levels = paste(gl(3,3,labels=c("RF", "Fi", "Fsbr")), 4:6, sep="_")
+              , labels=paste(gl(3,3,labels=c("RF", "Fi", "Fsbr")), 1:3, sep="_")
+            )
+          , lhs=
+            factor(
+              lhs
+              , levels = paste(gl(3,3,labels=c("RF", "Fi", "Fsbr")), 4:6, sep="_")
+              , labels=paste(gl(3,3,labels=c("RF", "Fi", "Fsbr")), 1:3, sep="_")
+            )
+        )
+      , by=c("lhs", "op", "rhs"), suffixes=c(".gr13", ".gr46")) %>%
   write.csv(file="Iowa.q1.results.csv")
 
-# From an NHST perspective, the two approaches only differ on two cross-lagged
-# paths - 
-# gr1 Independent Reading predicts gr2 Fluency for the MI model, but not
-# the FIML model. CIs: [-.3, -.025] MI vs [-.228, .034] FIML
-# gr3 Independent REading predicts gr4 FLuency for the FIML model, but not MI
-# CIs [-.03, .20] MI vs [.011, .158] FIML
-
-# While they disagree on significance, the CI's overlap considerably so this is
-# more about the sensitivity of p-values to analytic choices than it is about
-# anything more fundamentally structural.
-# 
-# There are three other reciprocal effects where the NHST is inconsistent. Again
-# the estimates and CI's are not insanely out of keeping with each other.
