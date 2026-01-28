@@ -104,40 +104,22 @@ q1.gr13.SEMModel = '
 # Cross-lagged paths
 RF_2 ~ Fi_1+Fsbr_1
 RF_3 ~ Fi_2+Fsbr_2
-# RF_4 ~ Fi_3+Fsbr_3
-# RF_5 ~ Fi_4+Fsbr_4
-# RF_6 ~ Fi_5+Fsbr_5
 
 Fi_2 ~ RF_1
 Fi_3 ~ RF_2
-# Fi_4 ~ RF_3
-# Fi_5 ~ RF_4
-# Fi_6 ~ RF_5
 
 Fsbr_2 ~ RF_1
 Fsbr_3 ~ RF_2
-# Fsbr_4 ~ RF_3
-# Fsbr_5 ~ RF_4
-# Fsbr_6 ~ RF_5
 
 # Auto-regressive paths (Stability)
 RF_2 ~ RF_1
 RF_3 ~ RF_2
-# RF_4 ~ RF_3
-# RF_5 ~ RF_4
-# RF_6 ~ RF_5
 
 Fi_2 ~ Fi_1
 Fi_3 ~ Fi_2
-# Fi_4 ~ Fi_3
-# Fi_5 ~ Fi_4
-# Fi_6 ~ Fi_5
 
 Fsbr_2 ~ Fsbr_1
 Fsbr_3 ~ Fsbr_2
-# Fsbr_4 ~ Fsbr_3
-# Fsbr_5 ~ Fsbr_4
-# Fsbr_6 ~ Fsbr_5
 
 # Reciprocal effects
 Fi_1 ~~ RF_1 + Fsbr_1
@@ -148,15 +130,6 @@ Fsbr_2 ~~ RF_2
 
 Fi_3 ~~ RF_3 + Fsbr_3
 Fsbr_3 ~~ RF_3
-
-# Fi_4 ~~ RF_4 + Fsbr_4
-# Fsbr_4 ~~ RF_4
-# 
-# Fi_5 ~~ RF_5 + Fsbr_5
-# Fsbr_5 ~~ RF_5
-# 
-# Fi_6 ~~ RF_6 + Fsbr_6
-# Fsbr_6 ~~ RF_6
 '
 
 q1.gr46.SEMModel = '
@@ -257,3 +230,52 @@ merge(parameterEstimates(q1.gr13.SEM)
       , by=c("lhs", "op", "rhs"), suffixes=c(".gr13", ".gr46")) %>%
   write.csv(file="Iowa.q1.results.csv")
 
+
+
+# 4.0 EXPLORATORY ####
+
+
+
+## 4.1 Parsimonious models ####
+
+# Let's try some parsimonious models, where we only keep effects that were 
+# "marginal" or significant.
+
+### 4.1.1 Gr 1-3 ####
+
+q1.gr13.SEMModel.prsmny =
+  '
+# Cross-lagged paths
+#RF_2 ~ Fi_1+Fsbr_1
+#RF_3 ~ Fi_2+Fsbr_2
+
+Fi_2 ~ RF_1
+Fi_3 ~ RF_2
+
+#Fsbr_2 ~ RF_1
+#Fsbr_3 ~ RF_2
+
+# Auto-regressive paths (Stability)
+RF_2 ~ RF_1
+RF_3 ~ RF_2
+
+Fi_2 ~ Fi_1
+Fi_3 ~ Fi_2
+
+Fsbr_2 ~ Fsbr_1
+Fsbr_3 ~ Fsbr_2
+
+# Reciprocal effects
+Fi_1 ~~ RF_1 + Fsbr_1
+Fsbr_1 ~~ RF_1
+
+Fi_2 ~~ RF_2 + Fsbr_2
+#Fsbr_2 ~~ RF_2
+
+Fi_3 ~~Fsbr_3 # + RF_3
+# Fsbr_3 ~~ RF_3
+'
+
+#### 4.1.1.1 Gr 1-3 Fit Parsimonious ####
+
+q1.gr13.SEM.prsmny = cfa(q1.gr13.SEMModel.prsmny, q1.gr13.SEMAnalysis, orthogonal=T, missing="fiml")
