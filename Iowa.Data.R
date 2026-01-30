@@ -6,6 +6,7 @@
 # Created: 2026-01-22
 # Author: Serje Robidoux
 # CHANGELOG:
+# 2026-01-30: Add the reading value data.
 
 # 0.0 Setup ####
 include(readxl)
@@ -33,10 +34,9 @@ msrmntMdlVars = iowaVarDetails$Variable
 iowaEnv = read_xlsx("ReadAnx_Env_item.xlsx", sheet="ReadAnx_Q5_item") %>% 
   select(participant, Sample, StudyYear, StartGrade, StartYear, all_of(msrmntMdlVars)) %>% 
   mutate(StartGrade = as.numeric(substr(StartGrade,1,1))
-         , Grade = StartGrade+StudyYear-1)
+         , Grade = StartGrade+(2020+StudyYear)-StartYear
+         )
 
-# hm... need to check that there were only 3 data points in gr. 7... that seems
-# wrong.
 
 ### 1.2.1 Recoding Schemes ####
 # most of the variables were answered on a "likert-like" scale
@@ -155,6 +155,20 @@ iowaEnv=merge(iowaEnv, cfaRes, all.x=T)
 iowaReading = read_xlsx("ReadAnx_Scores.xlsx", sheet="ReadAnx_Scores") %>% 
   select(participantID, Sample, Truegrade, starts_with("CC2"), starts_with("GORT"))
 
+## 1.4 Reading Interest ####
+iowaInterest = read_xlsx("ReadAnx_CMQ_item.xlsx", sheet="ReadAnx_CMQ_item") %>% 
+  mutate(StartGrade = as.numeric(substr(StartGrade,1,1))
+         , Grade = StartGrade+(2020+StudyYear)-StartYear)
+
+### 1.4.1 calculate Interest score ####
+iowaInterest = iowaInterest %>% mutate(RI = rowSums(pick(starts_with("motiv"))))
+
+# 2.0 Merge data sources ####
 iowaData = merge(iowaEnv, iowaReading, by.x=c("participant", "Grade")
-                 , by.y=c("participantID", "Truegrade"), all=T)
+                 , by.y=c("participantID", "Truegrade"), all=T
+                 , suffixes=c(".x", "")) %>% 
+  select(-ends_with(".x")) %>% 
+  merge(iowaInterest
+        , by=c("participant", "Grade"), all=T, suffixes=c("", ".y")) %>% 
+  select(-ends_with(".y"))
 
