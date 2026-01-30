@@ -59,44 +59,50 @@ q1.gr46.SEMData = q1Data %>%
   pivot_wider(id_cols=participant, values_from=c(Fi, Fsbr, RF), names_from=Grade)
 
 q1.gr13.SEMAnalysis = q1.gr13.SEMData  %>% 
-  mutate(Fi_vals=rowSums(!is.na(select(., starts_with("Fi"))))
-         , Fsbr_vals=rowSums(!is.na(select(., starts_with("Fsbr"))))
-         , RF_vals=rowSums(!is.na(select(., starts_with("RF"))))
+  mutate(Fi_vals=rowSums(!is.na(pick(starts_with("Fi"))))
+         , Fsbr_vals=rowSums(!is.na(pick(starts_with("Fsbr"))))
+         , RF_vals=rowSums(!is.na(pick(starts_with("RF"))))
          ) %>% 
-  mutate(all_vars = rowMins(select(., ends_with("vals")))>0
-         ,two_years = rowMaxes(select(.,ends_with("vals")))>1
-         ) %>% 
+  mutate(all_vars = rowMins(pick(ends_with("vals")))>0
+         , any_vars = rowMaxes(pick(ends_with("vals"), -all_vars))>0
+         ,two_years = rowMaxes(pick(ends_with("vals")))>1
+  ) %>% 
+  filter(any_vars) %>% 
   filter(all_vars) %>%
   # filter(two_years) %>% select(-two_years) %>% 
   select(-ends_with("_vars"))
 
-# Requiring that each participant provides each var at least once Costs me 19 
-# participants - 13 because they do not have SBR data, and 6 because they do not
-# have GORT FLuency data. (1 because they provide no data at all)
+# Requiring that each participant provides each var at least once Costs me 10 
+# participants - 6 because they do not have SBR data, and 4 because they do not
+# have GORT FLuency data.
 # 
-# After excluding them, there is still around 38% missingness across the dataset
-# RF_2   RF_3   Fi_2   Fi_3 Fsbr_2 Fsbr_3   Fi_1 Fsbr_1   RF_1 
-# 0.337  0.075  0.356  0.075  0.356  0.075  0.742  0.742  0.648 
+# q1.gr13.SEMAnalysis %>% select(matches("[123]$")) %>% mutate(across(everything(), is.na))
+# After excluding them, there is still around 36% missingness across the dataset
+#  Fi_3   Fi_2   Fi_1 Fsbr_3 Fsbr_2 Fsbr_1   RF_3   RF_2   RF_1 
+# 0.076  0.364  0.655  0.076  0.364  0.655  0.073  0.356  0.658 
 
 q1.gr46.SEMAnalysis = q1.gr46.SEMData  %>% 
-  mutate(Fi_vals=rowSums(!is.na(select(., starts_with("Fi"))))
-         , Fsbr_vals=rowSums(!is.na(select(., starts_with("Fsbr"))))
-         , RF_vals=rowSums(!is.na(select(., starts_with("RF"))))
+  mutate(Fi_vals=rowSums(!is.na(pick(starts_with("Fi"))))
+         , Fsbr_vals=rowSums(!is.na(pick(starts_with("Fsbr"))))
+         , RF_vals=rowSums(!is.na(pick(starts_with("RF"))))
   ) %>% 
-  mutate(all_vars = rowMins(select(., ends_with("vals")))>0
-         ,two_years = rowMaxes(select(.,ends_with("vals")))>1
+  mutate(all_vars = rowMins(pick(ends_with("vals")))>0
+         , any_vars = rowMaxes(pick(ends_with("vals"), -all_vars))>0
+         ,two_years = rowMaxes(pick(ends_with("vals")))>1
   ) %>% 
+  filter(any_vars) %>% 
   filter(all_vars) %>%
   # filter(two_years) %>% select(-two_years) %>% 
   select(-ends_with("_vars"))
 
-# Requiring that each participant provides each var at least once costs me 14 
-# participants - 13 because they do not have GORT Fluencydata, and 1 because 
+# Requiring that each participant provides each var at least once costs me 20 
+# participants - 4 because they do not have GORT Fluency data, and 16 because 
 # they do not have SBR data.
 # 
-# Overall, less missingness here although it's still 31%
-#   RF_5   RF_6   Fi_5   Fi_6 Fsbr_5 Fsbr_6   Fi_4 Fsbr_4   RF_4 
-# 0.167  0.445  0.339  0.661  0.339  0.661  0.061  0.061  0.016 
+# q1.gr46.SEMAnalysis %>% select(matches("[456]$")) %>% mutate(across(everything(), is.na))
+# Overall, less missingness here although it's still 29%
+#  Fi_4   Fi_5   Fi_6 Fsbr_4 Fsbr_5 Fsbr_6   RF_4   RF_5   RF_6 
+# 0.043  0.322  0.674  0.043  0.322  0.674  0.017  0.113  0.409 
 
 ## 2.2 Models ####
 
