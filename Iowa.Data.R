@@ -7,6 +7,8 @@
 # Author: Serje Robidoux
 # CHANGELOG:
 # 2026-01-30: Add the reading value data.
+# 2026-03-05: Revised dataset provided that corrects some errors and adds 
+#             additional data
 
 # 0.0 Setup ####
 include(readxl)
@@ -18,6 +20,7 @@ include(lavaan)
 # The Reading Environment data  contains lots of variables that are not relevant 
 # here. The data dictionary includes a column that identifies the ones I need 
 # for this purpose.
+# 2026-03-05: Is this still right? This wasn't updated.
 
 iowaVarDetails = read_xlsx("BobWiL.DataDictionary.xlsx", sheet = "Variables") %>% 
   filter(MeasurementModel) %>% 
@@ -31,12 +34,15 @@ iowaVarDetails = read_xlsx("BobWiL.DataDictionary.xlsx", sheet = "Variables") %>
 msrmntMdlVars = iowaVarDetails$Variable
 
 ## 1.2 Reading Environment Data ####
-iowaEnv = read_xlsx("ReadAnx_Env_item.xlsx", sheet="ReadAnx_Q5_item") %>% 
-  select(participant, Sample, StudyYear, StartGrade, StartYear, all_of(msrmntMdlVars)) %>% 
-  mutate(StartGrade = as.numeric(substr(StartGrade,1,1))
-         , Grade = StartGrade+(2020+StudyYear)-StartYear
-         )
 
+iowaEnv = read_xlsx("ReadAnx_Q5_item.xlsx", sheet="ReadAnx_Q5_item") %>% 
+  select(participant, Sample, StudyYear, StartGrade, StartYear, Grade, all_of(msrmntMdlVars)) %>% 
+  mutate(StartGrade = as.numeric(substr(StartGrade,1,1))
+         # , Grade = StartGrade+(2020+StudyYear)-StartYear
+         , across(c(StudyYear, StartGrade, StartYear, Grade), as.numeric)
+         )
+# 2026-03-04: This file has been renamed to Q5
+# 2026-03-05: these are all "text" as read in, so need to be converted
 
 ### 1.2.1 Recoding Schemes ####
 # most of the variables were answered on a "likert-like" scale
@@ -58,10 +64,10 @@ recodeList = list(
 # This will take each variable, look up the Options for that variable and,
 # if necessary, recode it.
 
-for (var in colnames(iowaEnv)[6:31]) {
+for (var in colnames(iowaEnv)[7:32]) {
   varOptions = iowaVarDetails$Options[iowaVarDetails$Variable==var]
   if(!is.na(varOptions))
-    iowaEnv[,var]=recodeList[[varOptions]][unlist(iowaEnv[,var])]
+    iowaEnv[,var]=recodeList[[varOptions]][as.numeric(unlist(iowaEnv[,var]))]
   
 }
 
@@ -73,8 +79,8 @@ for (var in colnames(iowaEnv)[6:31]) {
 
 # this bit of code spits out a list of the responses provided across the three
 # duration_ fields:
-# iowaEnv %>% select(starts_with("duration")) %>% unlist %>% as.matrix %>% 
-#   unique %>% 
+# iowaEnv %>% select(starts_with("duration")) %>% unlist %>% as.matrix %>%
+#   unique %>%
 #   write.csv(file="durationResponses.csv", row.names = F, quote=T)
 
 # iowaEnv %>% 
@@ -92,7 +98,7 @@ durationRespMap = read_xlsx("durationResponseMap.xlsx", sheet="duration_fields")
          , duration_read_alone_mins = duration) %>% 
   select(-duration, -`Hm?`)
 
-for (var in colnames(iowaEnv)[which(substr(colnames(iowaEnv), 1, 4)=="dura")]) {
+for (var in colnames(iowaEnv %>% select(starts_with("dura")))) {
   iowaEnv = merge(iowaEnv
                    , durationRespMap %>% 
                      select(strResp, all_of(paste0(var, "_mins")))
@@ -102,12 +108,6 @@ for (var in colnames(iowaEnv)[which(substr(colnames(iowaEnv), 1, 4)=="dura")]) {
 }
 
 ### 1.2.4 Derive Reading Interest and Frequency Scores ####
-
-#### 1.2.4.1 Reading Interest ####
-# We pre-registered just using the mean of the 5 CMQ items:
-#  - I do not appear to have this data available to me.
-
-#### 1.2.4.2 Frequency (Shared Book Reading & Independent Reading) ####
 # We had decided to use the results from a latent variable model with 
 # Independent Reading and child-active SBR as the main measures of frequency.
 # (that is, only consider reading where the child is actively reading, not
@@ -152,23 +152,66 @@ cfaRes = cbind(
 iowaEnv=merge(iowaEnv, cfaRes, all.x=T)
 
 ## 1.3 Reading Ability ####
-iowaReading = read_xlsx("ReadAnx_Scores.xlsx", sheet="ReadAnx_Scores") %>% 
-  select(participantID, Sample, Truegrade, starts_with("CC2"), starts_with("GORT"))
+# 2026-03-05: Grade is now computed and included in the dataset
+iowaReading = read_xlsx("ReadAnx_Scores.xlsx", sheet="ReadAnx_Scores") %>%
+  mutate(across(-Sample, as.numeric)) %>% 
+  select(participantID, Sample, Grade, starts_with("CC2"), starts_with("GORT"))
+
 
 ## 1.4 Reading Interest ####
-iowaInterest = read_xlsx("ReadAnx_CMQ_item.xlsx", sheet="ReadAnx_CMQ_item") %>% 
-  mutate(StartGrade = as.numeric(substr(StartGrade,1,1))
-         , Grade = StartGrade+(2020+StudyYear)-StartYear)
+# We pre-registered just using the mean of the 5 CMQ items:
 
-### 1.4.1 calculate Interest score ####
-iowaInterest = iowaInterest %>% mutate(RI = rowSums(pick(starts_with("motiv"))))
+iowaInterest = read_xlsx('ReadAnx_CMQ_item.xlsx', sheet='ReadAnx_CMQ_item')
+
+if(FALSE) {
+  # Ok, let's take a look at the internal reliability:
+  psych::alpha(iowaInterest %>% select(starts_with("motiv")))
+  # Across the sample: alpha = .7, so ok, but not brilliant. Item 5 is the
+  # weakest
+  
+  lapply(
+    by(
+      iowaInterest %>% select(starts_with("motiv")), iowaInterest$Grade
+      , psych::alpha
+    )
+    , function(x) x$total   
+  )
+  # gr 1 .75
+  # g4 2 .68
+  # gr 3 .64
+  # gr 4 .70
+  # gr 5 .65
+  # gr 6 .76
+  # 
+  # in grades 2-4 all 5 items are good, in 1, 5 and 6, dropping item 5 would
+  # improve the reliability.
+}
+
+
+# where we have at least 3 items, scores will be computed from available 
+# responses. Otherwise they will be deemed missing:
+
+(iowaInterest = 
+    iowaInterest %>% 
+    mutate(
+      nNA = rowSums(across(starts_with("motiv"), is.na))
+      , RI = ifelse(nNA<3,rowMeans(pick(starts_with("motiv")), na.rm=T), NA)
+    )
+) %>% select(nNA) %>% table()
+
+# This will cost us 24 ppts - 22 of whom provided no data anyway, so really only
+# 2.
 
 # 2.0 Merge data sources ####
 iowaData = merge(iowaEnv, iowaReading, by.x=c("participant", "Grade")
-                 , by.y=c("participantID", "Truegrade"), all=T
+                 , by.y=c("participantID", "Grade"), all=T
                  , suffixes=c(".x", "")) %>% 
   select(-ends_with(".x")) %>% 
-  merge(iowaInterest
+  merge(iowaInterest %>% select(participant, Grade, RI)
         , by=c("participant", "Grade"), all=T, suffixes=c("", ".y")) %>% 
-  select(-ends_with(".y"))
+  select(-ends_with(".y")) %>% 
+  filter(participant!=2881) # This participant provided no data
 
+# 3.0 Data details ####
+
+table(iowaEnv$StudyYear, iowaEnv$Grade)

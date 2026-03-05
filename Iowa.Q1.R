@@ -10,6 +10,7 @@
 # CHANGELOG:
 # 2026-01-28: Massive overhaul to split the analysis into gr1-3, and gr4-6 to
 #   overcome an issue with missingness in the covariance structures.
+# 2026-03-05: updated with new data from the next wave of analyses
 
 # 0.0 Setup ####
 include(lavaan)
@@ -73,13 +74,13 @@ q1.gr13.SEMAnalysis = q1.gr13.SEMData  %>%
   select(-ends_with("_vars"))
 
 # Requiring that each participant provides each var at least once Costs me 10 
-# participants - 6 because they do not have SBR data, and 4 because they do not
-# have GORT FLuency data.
+# participants - 4 because they do not have SBR data, and 6 because they do not
+# have GORT FLuency data, and 1 because they provide no data at all.
 # 
-# q1.gr13.SEMAnalysis %>% select(matches("[123]$")) %>% mutate(across(everything(), is.na))
+# q1.gr13.SEMAnalysis %>% select(matches("_[123]$")) %>% mutate(across(everything(), is.na)) %>% colMeans %>% round(3) 
 # After excluding them, there is still around 36% missingness across the dataset
 #  Fi_3   Fi_2   Fi_1 Fsbr_3 Fsbr_2 Fsbr_1   RF_3   RF_2   RF_1 
-# 0.076  0.364  0.655  0.076  0.364  0.655  0.073  0.356  0.658 
+# 0.076  0.364  0.655  0.076  0.364  0.655  0.073  0.356  0.658
 
 q1.gr46.SEMAnalysis = q1.gr46.SEMData  %>% 
   mutate(Fi_vals=rowSums(!is.na(pick(starts_with("Fi"))))
@@ -90,19 +91,20 @@ q1.gr46.SEMAnalysis = q1.gr46.SEMData  %>%
          , any_vars = rowMaxes(pick(ends_with("vals"), -all_vars))>0
          ,two_years = rowMaxes(pick(ends_with("vals")))>1
   ) %>% 
+  filter(!(any_vars & all_vars)) %>% data.frame
   filter(any_vars) %>% 
   filter(all_vars) %>%
   # filter(two_years) %>% select(-two_years) %>% 
   select(-ends_with("_vars"))
 
-# Requiring that each participant provides each var at least once costs me 20 
-# participants - 4 because they do not have GORT Fluency data, and 16 because 
-# they do not have SBR data.
+# Requiring that each participant provides each var at least once costs me 27 
+# participants - all due to missing gr 4 data, 4 due to missing Fluency, and
+# the rest due to missing SBR.
 # 
-# q1.gr46.SEMAnalysis %>% select(matches("[456]$")) %>% mutate(across(everything(), is.na))
-# Overall, less missingness here although it's still 29%
+# q1.gr46.SEMAnalysis %>% select(matches("_[456]$")) %>% mutate(across(everything(), is.na)) %>% colMeans %>% round(3) 
+# Overall, less missingness here although it's still 28%
 #  Fi_4   Fi_5   Fi_6 Fsbr_4 Fsbr_5 Fsbr_6   RF_4   RF_5   RF_6 
-# 0.043  0.322  0.674  0.043  0.322  0.674  0.017  0.113  0.409 
+# 0.043  0.322  0.674  0.043  0.322  0.674  0.017  0.061  0.352
 
 ## 2.2 Models ####
 
@@ -206,12 +208,13 @@ q1.gr46.SEM = cfa(q1.gr46.SEMModel, q1.gr46.SEMAnalysis, missing="fiml", orthogo
 
 ## 2.5 Fits ####
 rbind(gr13=fitmeasures(q1.gr13.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))
-, gr46=fitmeasures(q1.gr46.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi")))
+, gr46=fitmeasures(q1.gr46.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))) %>% 
+  round(3)
 
-# Not terrible, but not great either:
+# Mixed, but not terrible
 #      rmsea  srmr   tli   cfi  agfi
-# gr13 0.082 0.074 0.887 0.959 0.720
-# gr46 0.090 0.062 0.904 0.965 0.785
+# gr13 0.088 0.065 0.874 0.955 0.692
+# gr46 0.089 0.067 0.916 0.970 0.804
 # 
 # SRMR is good, RMSEA marginal, TLI borderline, CFI good, AGFI weak
 
@@ -236,7 +239,7 @@ merge(parameterEstimates(q1.gr13.SEM)
       , by=c("lhs", "op", "rhs"), suffixes=c(".gr13", ".gr46")) %>%
   write.csv(file="Iowa.q1.results.csv")
 
-
+# 2026-03-04: Nothing of substance changes.
 
 # 4.0 EXPLORATORY ####
 

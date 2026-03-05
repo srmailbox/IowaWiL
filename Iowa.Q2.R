@@ -15,7 +15,7 @@ include(mice)
 include(semTools)
 
 # Randomly sample a seed
-# set.seed(110265658)
+set.seed(110265658)
 # Right now, it seems like results do vary a lot between runs. Which I don't love.
 
 # 1.0 Read Data ####
@@ -64,16 +64,17 @@ q2.gr13.SEMAnalysis = q2.gr13.SEMData  %>%
          , any_vars = rowMaxes(pick(ends_with("vals"), -all_vars))>0
          # ,two_years = rowMaxes(select(.,ends_with("vals")))>1
   ) %>% 
+  # filter(!(any_vars & all_vars))
   filter(any_vars) %>% 
   filter(all_vars) %>%
   # filter(two_years) %>% select(-two_years) %>% 
   select(-ends_with("_vars"))
 
-# Requiring that each participant provides each var at least once costs me 15 
-# participants - 12 because they do not have SBR data, and 3 because they do not
-# have GORT FLuency data.
+# Requiring that each participant provides each var at least once costs me 16 
+# participants - 3 because they do not have SBR data, and 12 because they do not
+# have Reading Interest data, and 1 is missing both SBR and Interest.
 # 
-# q2.gr13.SEMAnalysis %>% select(matches("[123]$")) %>% mutate(across(everything(), is.na))
+# q2.gr13.SEMAnalysis %>% select(matches("[123]$")) %>% mutate(across(everything(), is.na)) %>% colMeans %>% round(3)
 # After excluding them, there is still around 36% missingness across the dataset
 # Mostly in year 1
 #  Fi_3   Fi_2   Fi_1 Fsbr_3 Fsbr_2 Fsbr_1   RI_3   RI_2   RI_1 
@@ -88,12 +89,15 @@ q2.gr46.SEMAnalysis = q2.gr46.SEMData  %>%
          , any_vars = rowMaxes(pick(ends_with("vals"), -all_vars))>0
          # ,two_years = rowMaxes(select(.,ends_with("vals")))>1
   ) %>% 
+  filter(!(any_vars & all_vars)) %>% data.frame
   filter(any_vars) %>% 
-  filter(!all_vars) %>%
+  filter(all_vars) %>%
   # filter(two_years) %>% select(-two_years) %>% 
   select(-ends_with("_vars"))
 
-# I lose 7 of 235 - 1 due to missing SBR, and the remaining due to missing Interest.
+# I lose 29 of 257 - 1 due to missing SBR, and the remaining due to missing Interest.
+# 2026-03-05: This is odd, because it leaves me with the same set of kids I had
+#  before the data was updated.... so all 22 "new kids" are now excluded.
 # 
 # Still have 34% missingness
 #  Fi_4   Fi_5   Fi_6 Fsbr_4 Fsbr_5 Fsbr_6   RI_4   RI_5   RI_6 
