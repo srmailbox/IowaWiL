@@ -161,32 +161,8 @@ iowaReading = read_xlsx("ReadAnx_Scores.xlsx", sheet="ReadAnx_Scores") %>%
 ## 1.4 Reading Interest ####
 # We pre-registered just using the mean of the 5 CMQ items:
 
-iowaInterest = read_xlsx('ReadAnx_CMQ_item.xlsx', sheet='ReadAnx_CMQ_item')
-
-if(FALSE) {
-  # Ok, let's take a look at the internal reliability:
-  psych::alpha(iowaInterest %>% select(starts_with("motiv")))
-  # Across the sample: alpha = .7, so ok, but not brilliant. Item 5 is the
-  # weakest
-  
-  lapply(
-    by(
-      iowaInterest %>% select(starts_with("motiv")), iowaInterest$Grade
-      , psych::alpha
-    )
-    , function(x) x$total   
-  )
-  # gr 1 .75
-  # g4 2 .68
-  # gr 3 .64
-  # gr 4 .70
-  # gr 5 .65
-  # gr 6 .76
-  # 
-  # in grades 2-4 all 5 items are good, in 1, 5 and 6, dropping item 5 would
-  # improve the reliability.
-}
-
+iowaInterest = read_xlsx('ReadAnx_CMQ_item.xlsx', sheet='ReadAnx_CMQ_item') %>% 
+  mutate(across(starts_with("motiv"), as.numeric))
 
 # where we have at least 3 items, scores will be computed from available 
 # responses. Otherwise they will be deemed missing:
@@ -215,3 +191,42 @@ iowaData = merge(iowaEnv, iowaReading, by.x=c("participant", "Grade")
 # 3.0 Data details ####
 
 table(iowaEnv$StudyYear, iowaEnv$Grade)
+table(iowaInterest$StudyYear, iowaInterest$Grade)
+
+## 3.1 Interest Scale ####
+if(FALSE) {
+
+### 3.1.1 Cronbach's alpha ####
+  # Ok, let's take a look at the internal reliability:
+  psych::alpha(iowaInterest %>% select(starts_with("motiv")))
+  # Across the sample: alpha = .71, so ok, but not brilliant. Item 5 is the
+  # weakest reducing the reliability from .74
+  
+  lapply(
+    by(
+      iowaInterest %>% select(starts_with("motiv")), iowaInterest$Grade
+      , psych::alpha
+    )
+    , function(x) x$total   
+  )
+  # gr 1 .75 (.79)
+  # g4 2 .68 (.70)
+  # gr 3 .64 (.66)
+  # gr 4 .70 (.73)
+  # gr 5 .67 (.71)
+  # gr 6 .74 (.78)
+  # 
+  # in all grades, the correlation between item 5, and the others (r.drop) is
+  # very weak, resulting in reduced reliabilities (parenthesis are the alpha
+  # if item 5 is removed).
+
+### 3.1.2 Factor Analysis ####
+
+  factanal(iowaInterest %>% select(starts_with("motiv")) %>% drop_na, 2)
+
+### 3.1.3 PCA ####
+  
+  princomp(iowaInterest %>% select(starts_with("motiv")) %>% drop_na) %>% summary(loadings=T)
+}
+
+
