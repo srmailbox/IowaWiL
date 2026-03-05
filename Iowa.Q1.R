@@ -14,12 +14,8 @@
 
 # 0.0 Setup ####
 include(lavaan)
-include(mice)
 include(semTools)
 
-# Randomly sample a seed
-set.seed(-893456647)
-# Right now, it seems like results do vary a lot between runs. Which I don't love.
 
 # 1.0 Read Data ####
 
@@ -45,7 +41,7 @@ q1Data = q1Data %>%
 
 q1.gr13.SEMData = q1Data %>% 
   filter(incl13) %>% 
-  rename(RF = GORT_Fluency)  %>% 
+  rename(RF = GORT_Fluency)  %>% arrange(Grade) %>% 
   # Note that the gort is currently on a 100 +/-15 scale, so I'm going to
   # standardise those
   mutate(RF = (RF-100)/15) %>% 
@@ -53,7 +49,7 @@ q1.gr13.SEMData = q1Data %>%
 
 q1.gr46.SEMData = q1Data %>% 
   filter(incl46) %>% 
-  rename(RF = GORT_Fluency)  %>% 
+  rename(RF = GORT_Fluency)  %>% arrange(Grade) %>% 
   # Note that the gort is currently on a 100 +/-15 scale, so I'm going to
   # standardise those
   mutate(RF = (RF-100)/15) %>% 
@@ -79,8 +75,8 @@ q1.gr13.SEMAnalysis = q1.gr13.SEMData  %>%
 # 
 # q1.gr13.SEMAnalysis %>% select(matches("_[123]$")) %>% mutate(across(everything(), is.na)) %>% colMeans %>% round(3) 
 # After excluding them, there is still around 36% missingness across the dataset
-#  Fi_3   Fi_2   Fi_1 Fsbr_3 Fsbr_2 Fsbr_1   RF_3   RF_2   RF_1 
-# 0.076  0.364  0.655  0.076  0.364  0.655  0.073  0.356  0.658
+#  Fi_1   Fi_2   Fi_3 Fsbr_1 Fsbr_2 Fsbr_3   RF_1   RF_2   RF_3 
+# 0.655  0.364  0.076  0.655  0.364  0.076  0.658  0.356  0.073 
 
 q1.gr46.SEMAnalysis = q1.gr46.SEMData  %>% 
   mutate(Fi_vals=rowSums(!is.na(pick(starts_with("Fi"))))
@@ -91,7 +87,7 @@ q1.gr46.SEMAnalysis = q1.gr46.SEMData  %>%
          , any_vars = rowMaxes(pick(ends_with("vals"), -all_vars))>0
          ,two_years = rowMaxes(pick(ends_with("vals")))>1
   ) %>% 
-  filter(!(any_vars & all_vars)) %>% data.frame
+  # filter(!(any_vars & all_vars)) %>% data.frame
   filter(any_vars) %>% 
   filter(all_vars) %>%
   # filter(two_years) %>% select(-two_years) %>% 
@@ -102,9 +98,9 @@ q1.gr46.SEMAnalysis = q1.gr46.SEMData  %>%
 # the rest due to missing SBR.
 # 
 # q1.gr46.SEMAnalysis %>% select(matches("_[456]$")) %>% mutate(across(everything(), is.na)) %>% colMeans %>% round(3) 
-# Overall, less missingness here although it's still 28%
+# Overall, less missingness overall here at 20% since we have now collected another round of data.
 #  Fi_4   Fi_5   Fi_6 Fsbr_4 Fsbr_5 Fsbr_6   RF_4   RF_5   RF_6 
-# 0.043  0.322  0.674  0.043  0.322  0.674  0.017  0.061  0.352
+# 0.040  0.151  0.418  0.040  0.151  0.418  0.016  0.139  0.406
 
 ## 2.2 Models ####
 
@@ -211,12 +207,12 @@ rbind(gr13=fitmeasures(q1.gr13.SEM, fit.measures = c("rmsea", "srmr", "tli", "cf
 , gr46=fitmeasures(q1.gr46.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))) %>% 
   round(3)
 
-# Mixed, but not terrible
+# Mixed - some measures do better than others
 #      rmsea  srmr   tli   cfi  agfi
-# gr13 0.088 0.065 0.874 0.955 0.692
-# gr46 0.089 0.067 0.916 0.970 0.804
+# gr13 0.088 0.066 0.872 0.954 0.699
+# gr46 0.109 0.067 0.882 0.957 0.793
 # 
-# SRMR is good, RMSEA marginal, TLI borderline, CFI good, AGFI weak
+# RMSEA is ok for 13, but not 46, SRMR is good, TLI borderline, CFI good, AGFI weak
 
 # 3.0 Output results ####
 
@@ -237,6 +233,7 @@ merge(parameterEstimates(q1.gr13.SEM)
             )
         )
       , by=c("lhs", "op", "rhs"), suffixes=c(".gr13", ".gr46")) %>%
+  arrange(lhs) %>% 
   write.csv(file="Iowa.q1.results.csv")
 
 # 2026-03-04: Nothing of substance changes.
