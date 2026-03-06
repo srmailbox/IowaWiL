@@ -11,12 +11,7 @@
 
 # 0.0 Setup ####
 include(lavaan)
-include(mice)
 include(semTools)
-
-# Randomly sample a seed
-set.seed(110265658)
-# Right now, it seems like results do vary a lot between runs. Which I don't love.
 
 # 1.0 Read Data ####
 
