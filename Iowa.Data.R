@@ -9,6 +9,7 @@
 # 2026-01-30: Add the reading value data.
 # 2026-03-05: Revised dataset provided that corrects some errors and adds 
 #             additional data
+# 2026-03-07: Revised dataset provided that corrects some Year 5 errors in CMQ
 
 # 0.0 Setup ####
 include(readxl)
@@ -139,7 +140,7 @@ cfaData = iowaEnv %>%
 
 iowa.cfaFreq = sem(cfaFreqModel, data=cfaData, std.ov = T)
 
-#fitmeasures(iowa.cfaFreq, fit.measures = c("srmr", "cfi", "agfi", "rmsea"))
+#fitmeasures(iowa.cfaFreq, fit.measures = c("srmr", "rmsea", "cfi", "agfi", "tli"))
 # mediocre fits, really
 
 # Assign scores to kids and years

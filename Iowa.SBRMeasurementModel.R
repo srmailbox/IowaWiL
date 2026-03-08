@@ -16,11 +16,12 @@
 # Author: Serje Robidoux
 # CHANGELOG:
 # 2026-01-22 Modified to use a script for data processing.
-# 
+# 2026-03-07: New data provided, including a 5th year of data collection.
 
 # 0.0 Setup ####
 include(lavaan)
 include(readxl)
+include(umx)
 
 # 1.0 Data ####
 # 2.0 Duration fields ####
@@ -117,31 +118,31 @@ mmF4 = '
 
 ### 3.2.1 single factor ####
 
-iowaF1 = cfa(mmF1, data=iowaEnv, std.ov=T)
-fitmeasures(iowaF1, fit.measures = c("srmr", "cfi", "agfi", "rmsea"))
+iowaF1 = cfa(mmF1, data=iowaEnv, std.ov=T, missing="fiml", missing="fiml")
+fitmeasures(iowaF1, fit.measures = c("srmr", "rmsea", "cfi", "agfi", "tli"))
 # terrible fit
-#  srmr   cfi  agfi rmsea 
-# 0.129 0.387 0.537 0.152
+#  srmr rmsea   cfi  agfi   tli 
+# 0.126 0.135 0.447 0.517 0.399
 # 
 
 ### 3.2.2 two factor ####
 
-iowaF2 = cfa(mmF2, data=iowaEnv, std.ov=T)
-fitmeasures(iowaF2, fit.measures = c("srmr", "cfi", "agfi", "rmsea"))
+iowaF2 = cfa(mmF2, data=iowaEnv, std.ov=T, missing="fiml")
+fitmeasures(iowaF2, fit.measures = c("srmr", "rmsea", "cfi", "agfi", "tli"))
 
 # No real improvement
-# srmr   cfi  agfi rmsea 
-# 0.128 0.441 0.564 0.146 
+#  srmr rmsea   cfi  agfi   tli 
+# 0.125 0.132 0.472 0.534 0.424 
 
 
 ### 3.2.3 Four factor ####
 
-iowaF4 = cfa(mmF4, data=iowaEnv, std.ov=T)
-fitmeasures(iowaF4, fit.measures = c("srmr", "cfi", "agfi", "rmsea"))
+iowaF4 = cfa(mmF4, data=iowaEnv, std.ov=T, missing="fiml")
+fitmeasures(iowaF4, fit.measures = c("srmr", "rmsea", "cfi", "agfi", "tli"))
 
 # More noticeable improvement, but still not a "good" fit.
-#  srmr   cfi  agfi rmsea 
-# 0.118 0.515 0.602 0.137
+#  srmr rmsea   cfi  agfi   tli
+# 0.124 0.123 0.551 0.581 0.501
 
 ### 3.2.4 Compare models ####
 
@@ -150,34 +151,42 @@ anova(iowaF1, iowaF2, iowaF4)
 
 
 ### 3.2.5 Exploratory/Factor Analysis ####
-psych::scree(
-  iowaEnv %>% 
-    select(-participant, -Sample, -StudyYear, -StartGrade, -StartYear
-           , -Grade, -starts_with("duration"), ends_with("_mins")) %>% 
-    drop_na())
+# 2026-03-07: In StudyYears 3-5, there are no complete data - so we need to take
+# a FIML approach, using umx
 
-# hm. Scree plot says 3 factors, PCA says as many as 8 components.
-# looking at the factors, 4 seems to make some sense.
-factanal(iowaEnv %>% 
-           select(-participant, -Sample, -StudyYear, -StartGrade, -StartYear
-                  , -Grade, -starts_with("duration"), ends_with("_mins")) %>% 
-           drop_na()
-         , factors=4, rotation="promax") %>% 
-  print(cutoff=.5)
+efaF4 = umxEFA(iowaEnv %>% 
+         select(-participant, -Sample, -StudyYear, -StartGrade, -StartYear
+                , -Grade, -starts_with("duration"), ends_with("_mins"), -Fi, -Fsbr)
+       , factors=4, rotation="varimax")
 
-# Using .5 cutoff to avoid cross-contamination of constructs.
+# fits aren't great, but ok CFI = 0.809; TLI = 0.727; RMSEA = 0.09
+# F1: parent, F2 - picture books, F3 - child SBR, F4-independent
 
-# With three factors we get (with key variables):
-# F1 - child reading to parent: child_read_*
-# F2 - independent reading: read_alone, ..._chapter_book, initiate_read_alone (nonschool_related, duration_read_alone)
-# F3 - parent reading to child: parent_read_out_loud, .._chapter_books (picture_books, nonfiction)
-# F4 - school work: homework, reading school related
+efaF3 = umxEFA(iowaEnv %>% 
+                 select(-participant, -Sample, -StudyYear, -StartGrade, -StartYear
+                        , -Grade, -starts_with("duration"), ends_with("_mins"), -Fi, -Fsbr)
+               , factors=3, rotation="varimax")
+
+# bad fits CFI = 0.747; TLI = 0.671; RMSEA = 0.099
+# F1: parent SBR
+# F2: child SBR
+# F3: independent reading
+
+efaF2 = umxEFA(iowaEnv %>% 
+                 select(-participant, -Sample, -StudyYear, -StartGrade, -StartYear
+                        , -Grade, -starts_with("duration"), ends_with("_mins"), -Fi, -Fsbr)
+               
+               , factors=2, rotation="promax")
+
+# Terrible fits again.CFI = 0.614; TLI = 0.543; RMSEA = 0.117
+# F1: muddled SBR - both parent and child
+# F2: read alone
 
 ### 3.2.6 PCA ####
-(iowa.pca = prcomp(iowaEnv %>% 
+iowa.pca=umxEFA(iowaEnv %>% 
          select(-participant, -Sample, -StudyYear, -StartGrade, -StartYear
-                , -Grade, -starts_with("duration"), ends_with("_mins")) %>% 
-         drop_na()))$rotation %>% round(2)
+                , -Grade, -starts_with("duration"), ends_with("_mins"), -Fi, -Fsbr)
+       , factors=9, rotation="none")
 
 
 # 4.0 Revised CFA ####
@@ -214,17 +223,22 @@ IR =~ read_alone+read_alone_chapter_books+read_alone_comics+initiate_read_alone#
 IR ~~ SBR
 '
 
-iowa.cfaRev = sem(cfaRevModel, data=iowaEnv, std.ov = T)
-fitmeasures(iowa.cfaRev, fit.measures = c("srmr", "cfi", "agfi", "rmsea"))
+iowa.cfaRev = sem(cfaRevModel, data=iowaEnv, std.ov = T, missing="fiml")
+fitmeasures(iowa.cfaRev, fit.measures = c("srmr", "rmsea", "cfi", "agfi", "tli"))
 
 
-iowa.cfaRevAlt = sem(cfaRevModelAlt, data=iowaEnv, std.ov = T)
-fitmeasures(iowa.cfaRevAlt, fit.measures = c("srmr", "cfi", "agfi", "rmsea"))
+iowa.cfaRevAlt = sem(cfaRevModelAlt, data=iowaEnv, std.ov = T, missing="fiml")
+fitmeasures(iowa.cfaRevAlt, fit.measures = c("srmr", "rmsea", "cfi", "agfi", "tli"))
 
 include(semPlot)
 semPaths(iowa.cfaRevAlt, whatLabels = "est")
 semPaths(iowa.cfaRev, whatLabels = "est")
 
-parameterEstimates(iowa.cfaRevAlt) %>% filter(rhs=="SBR")
+parameterEstimates(iowa.cfaRevAlt) %>% filter(lhs=="SBR")
 
-predict(iowa.cfaRev)
+cor(predict(iowa.cfaRevAlt), predict(iowa.cfaRev), use="pairwise.complete")
+
+## OK, so despite the slight shift in the FA results, it seems that we are still
+## ok to just use the two factor model with childSBR and independent reading.
+## 
+## TO BE CONFIRMED WITH THE CORRECTED Env Data for Year 5
