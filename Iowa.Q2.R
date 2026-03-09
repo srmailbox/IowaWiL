@@ -107,23 +107,23 @@ q2.gr46.SEMAnalysis = q2.gr46.SEMData  %>%
 
 q2.gr13.SEMModel = '
 # Latent Vars for RI which will force an average score
-RI_1 =~ 1*motiv_1_1 + 1*motiv_2_1 + 1*motiv_3_1 + 1*motiv_4_1
-RI_2 =~ 1*motiv_1_2 + 1*motiv_2_2 + 1*motiv_3_2 + 1*motiv_4_2
-RI_3 =~ 1*motiv_1_3 + 1*motiv_2_3 + 1*motiv_3_3 + 1*motiv_4_3
+lvRI_1 =~ 1*motiv_1_1 + 1*motiv_2_1 + 1*motiv_3_1 + 1*motiv_4_1
+lvRI_2 =~ 1*motiv_1_2 + 1*motiv_2_2 + 1*motiv_3_2 + 1*motiv_4_2
+lvRI_3 =~ 1*motiv_1_3 + 1*motiv_2_3 + 1*motiv_3_3 + 1*motiv_4_3
 
 # Cross-lagged paths
-RI_2 ~ Fi_1+Fsbr_1
-RI_3 ~ Fi_2+Fsbr_2
+lvRI_2 ~ Fi_1+Fsbr_1
+lvRI_3 ~ Fi_2+Fsbr_2
 
-Fi_2 ~ RI_1
-Fi_3 ~ RI_2
+Fi_2 ~ lvRI_1
+Fi_3 ~ lvRI_2
 
-Fsbr_2 ~ RI_1
-Fsbr_3 ~ RI_2
+Fsbr_2 ~ lvRI_1
+Fsbr_3 ~ lvRI_2
 
 # Auto-regressive paths (Stability)
-RI_2 ~ RI_1
-RI_3 ~ RI_2
+lvRI_2 ~ lvRI_1
+lvRI_3 ~ lvRI_2
 
 Fi_2 ~ Fi_1
 Fi_3 ~ Fi_2
@@ -132,35 +132,35 @@ Fsbr_2 ~ Fsbr_1
 Fsbr_3 ~ Fsbr_2
 
 # Reciprocal effects
-Fi_1 ~~ RI_1 + Fsbr_1
-Fsbr_1 ~~ RI_1
+Fi_1 ~~ lvRI_1 + Fsbr_1
+Fsbr_1 ~~ lvRI_1
 
-Fi_2 ~~ RI_2 + Fsbr_2
-Fsbr_2 ~~ RI_2
+Fi_2 ~~ lvRI_2 + Fsbr_2
+Fsbr_2 ~~ lvRI_2
 
-Fi_3 ~~ RI_3 + Fsbr_3
-Fsbr_3 ~~ RI_3
+Fi_3 ~~ lvRI_3 + Fsbr_3
+Fsbr_3 ~~ lvRI_3
 '
 
 q2.gr46.SEMModel = '
 # Latent Vars for RI which will force an average score
-RI_4 =~ 1*motiv_1_4 + 1*motiv_2_4 + 1*motiv_3_4 + 1*motiv_4_4
-RI_5 =~ 1*motiv_1_5 + 1*motiv_2_5 + 1*motiv_3_5 + 1*motiv_4_5
-RI_6 =~ 1*motiv_1_6 + 1*motiv_2_6 + 1*motiv_3_6 + 1*motiv_4_6
+lvRI_4 =~ 1*motiv_1_4 + 1*motiv_2_4 + 1*motiv_3_4 + 1*motiv_4_4
+lvRI_5 =~ 1*motiv_1_5 + 1*motiv_2_5 + 1*motiv_3_5 + 1*motiv_4_5
+lvRI_6 =~ 1*motiv_1_6 + 1*motiv_2_6 + 1*motiv_3_6 + 1*motiv_4_6
 
 # Cross-lagged paths
-RI_5 ~ Fi_4+Fsbr_4
-RI_6 ~ Fi_5+Fsbr_5
+lvRI_5 ~ Fi_4+Fsbr_4
+lvRI_6 ~ Fi_5+Fsbr_5
 
-Fi_5 ~ RI_4
-Fi_6 ~ RI_5
+Fi_5 ~ lvRI_4
+Fi_6 ~ lvRI_5
 
-Fsbr_5 ~ RI_4
-Fsbr_6 ~ RI_5
+Fsbr_5 ~ lvRI_4
+Fsbr_6 ~ lvRI_5
 
 # Auto-regressive paths (Stability)
-RI_5 ~ RI_4
-RI_6 ~ RI_5
+lvRI_5 ~ lvRI_4
+lvRI_6 ~ lvRI_5
 
 Fi_5 ~ Fi_4
 Fi_6 ~ Fi_5
@@ -169,14 +169,14 @@ Fsbr_5 ~ Fsbr_4
 Fsbr_6 ~ Fsbr_5
 
 # Reciprocal effects
-Fi_4 ~~ RI_4 + Fsbr_4
-Fsbr_4 ~~ RI_4
+Fi_4 ~~ lvRI_4 + Fsbr_4
+Fsbr_4 ~~ lvRI_4
 
-Fi_5 ~~ RI_5 + Fsbr_5
-Fsbr_5 ~~ RI_5
+Fi_5 ~~ lvRI_5 + Fsbr_5
+Fsbr_5 ~~ lvRI_5
 
-Fi_6 ~~ RI_6 + Fsbr_6
-Fsbr_6 ~~ RI_6
+Fi_6 ~~ lvRI_6 + Fsbr_6
+Fsbr_6 ~~ lvRI_6
 '
 
 ## 2.3 Fitting ####
@@ -218,6 +218,8 @@ merge(parameterEstimates(q2.gr13.SEM)
       , by=c("lhs", "op", "rhs"), suffixes=c(".gr13", ".gr46")) %>%
   write.csv(file="Iowa.q2.results.csv")
 
+
+
 # 4.0 EXPLORATORY ####
 
 ## 4.1 Parsimonious models ####
@@ -226,22 +228,22 @@ merge(parameterEstimates(q2.gr13.SEM)
 # "marginal" or significant.
 
 ### 4.1.1 Gr 1-3 ####
-
-q2.gr13.SEMModel.prsmny =
-  '
+if(FALSE){
+  q2.gr13.SEMModel.prsmny =
+    '
 # Cross-lagged paths
-#RI_2 ~ Fi_1+Fsbr_1
-#RI_3 ~ Fi_2+Fsbr_2
+#lvRI_2 ~ Fi_1+Fsbr_1
+#lvRI_3 ~ Fi_2+Fsbr_2
 
-Fi_2 ~ RI_1
-Fi_3 ~ RI_2
+Fi_2 ~ lvRI_1
+Fi_3 ~ lvRI_2
 
-#Fsbr_2 ~ RI_1
-#Fsbr_3 ~ RI_2
+#Fsbr_2 ~ lvRI_1
+#Fsbr_3 ~ lvRI_2
 
 # Auto-regressive paths (Stability)
-RI_2 ~ RI_1
-RI_3 ~ RI_2
+lvRI_2 ~ lvRI_1
+lvRI_3 ~ lvRI_2
 
 Fi_2 ~ Fi_1
 Fi_3 ~ Fi_2
@@ -250,16 +252,17 @@ Fsbr_2 ~ Fsbr_1
 Fsbr_3 ~ Fsbr_2
 
 # Reciprocal effects
-Fi_1 ~~ RI_1 + Fsbr_1
-Fsbr_1 ~~ RI_1
+Fi_1 ~~ lvRI_1 + Fsbr_1
+Fsbr_1 ~~ lvRI_1
 
-Fi_2 ~~ RI_2 + Fsbr_2
-#Fsbr_2 ~~ RI_2
+Fi_2 ~~ lvRI_2 + Fsbr_2
+#Fsbr_2 ~~ lvRI_2
 
-Fi_3 ~~Fsbr_3 # + RI_3
-# Fsbr_3 ~~ RI_3
+Fi_3 ~~Fsbr_3 # + lvRI_3
+# Fsbr_3 ~~ lvRI_3
 '
-
-#### 4.1.1.1 Gr 1-3 Fit Parsimonious ####
-
-q2.gr13.SEM.prsmny = cfa(q2.gr13.SEMModel.prsmny, q2.gr13.SEMAnalysis, orthogonal=T, missing="fiml")
+  
+  #### 4.1.1.1 Gr 1-3 Fit Parsimonious ####
+  
+  q2.gr13.SEM.prsmny = cfa(q2.gr13.SEMModel.prsmny, q2.gr13.SEMAnalysis, orthogonal=T, missing="fiml")
+}
