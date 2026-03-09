@@ -17,6 +17,7 @@
 # CHANGELOG:
 # 2026-01-22 Modified to use a script for data processing.
 # 2026-03-07: New data provided, including a 5th year of data collection.
+# 2026-03-09: corrected some issues with year 5 export.
 
 # 0.0 Setup ####
 include(lavaan)
@@ -122,7 +123,7 @@ iowaF1 = cfa(mmF1, data=iowaEnv, std.ov=T, missing="fiml", missing="fiml")
 fitmeasures(iowaF1, fit.measures = c("srmr", "rmsea", "cfi", "agfi", "tli"))
 # terrible fit
 #  srmr rmsea   cfi  agfi   tli 
-# 0.126 0.135 0.447 0.517 0.399
+# 0.125 0.135 0.448 0.517 0.400
 # 
 
 ### 3.2.2 two factor ####
@@ -159,7 +160,7 @@ efaF4 = umxEFA(iowaEnv %>%
                 , -Grade, -starts_with("duration"), ends_with("_mins"), -Fi, -Fsbr)
        , factors=4, rotation="varimax")
 
-# fits aren't great, but ok CFI = 0.809; TLI = 0.727; RMSEA = 0.09
+# fits aren't great, but ok CFI = 0.810; TLI = 0.727; RMSEA = 0.091
 # F1: parent, F2 - picture books, F3 - child SBR, F4-independent
 
 efaF3 = umxEFA(iowaEnv %>% 
@@ -167,7 +168,7 @@ efaF3 = umxEFA(iowaEnv %>%
                         , -Grade, -starts_with("duration"), ends_with("_mins"), -Fi, -Fsbr)
                , factors=3, rotation="varimax")
 
-# bad fits CFI = 0.747; TLI = 0.671; RMSEA = 0.099
+# bad fits CFI = 0.7478; TLI = 0.672; RMSEA = 0.099
 # F1: parent SBR
 # F2: child SBR
 # F3: independent reading
@@ -231,10 +232,10 @@ iowa.cfaRevAlt = sem(cfaRevModelAlt, data=iowaEnv, std.ov = T, missing="fiml")
 fitmeasures(iowa.cfaRevAlt, fit.measures = c("srmr", "rmsea", "cfi", "agfi", "tli"))
 
 include(semPlot)
-semPaths(iowa.cfaRevAlt, whatLabels = "est")
 semPaths(iowa.cfaRev, whatLabels = "est")
+semPaths(iowa.cfaRevAlt, whatLabels = "est")
 
-parameterEstimates(iowa.cfaRevAlt) %>% filter(lhs=="SBR")
+parameterEstimates(iowa.cfaRev) %>% filter(lhs=="IR")
 
 cor(predict(iowa.cfaRevAlt), predict(iowa.cfaRev), use="pairwise.complete")
 

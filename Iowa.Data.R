@@ -10,6 +10,8 @@
 # 2026-03-05: Revised dataset provided that corrects some errors and adds 
 #             additional data
 # 2026-03-07: Revised dataset provided that corrects some Year 5 errors in CMQ
+# 2026-03-09: Revised dataset provided that corrects some Year 5 errors in Env
+#             - sets things up to fit an LV for Reading Interest
 
 # 0.0 Setup ####
 include(readxl)
@@ -36,7 +38,7 @@ msrmntMdlVars = iowaVarDetails$Variable
 
 ## 1.2 Reading Environment Data ####
 
-iowaEnv = read_xlsx("ReadAnx_Q5_item.xlsx", sheet="ReadAnx_Q5_item") %>% 
+iowaEnv = read_xlsx("ReadAnx_Q2_item.xlsx", sheet="ReadAnx_Q5_item") %>% 
   select(participant, Sample, StudyYear, StartGrade, StartYear, Grade, all_of(msrmntMdlVars)) %>% 
   mutate(StartGrade = as.numeric(substr(StartGrade,1,1))
          # , Grade = StartGrade+(2020+StudyYear)-StartYear
@@ -142,6 +144,8 @@ iowa.cfaFreq = sem(cfaFreqModel, data=cfaData, std.ov = T)
 
 #fitmeasures(iowa.cfaFreq, fit.measures = c("srmr", "rmsea", "cfi", "agfi", "tli"))
 # mediocre fits, really
+#  srmr rmsea   cfi  agfi   tli 
+# 0.088 0.123 0.891 0.864 0.848 
 
 # Assign scores to kids and years
 cfaRes = cbind(
@@ -184,7 +188,7 @@ iowaData = merge(iowaEnv, iowaReading, by.x=c("participant", "Grade")
                  , by.y=c("participantID", "Grade"), all=T
                  , suffixes=c(".x", "")) %>% 
   select(-ends_with(".x")) %>% 
-  merge(iowaInterest %>% select(participant, Grade, RI)
+  merge(iowaInterest %>% select(participant, Grade, starts_with("motiv"),RI)
         , by=c("participant", "Grade"), all=T, suffixes=c("", ".y")) %>% 
   select(-ends_with(".y")) %>% 
   filter(participant!=2881) # This participant provided no data
@@ -208,14 +212,14 @@ if(FALSE) {
       iowaInterest %>% select(starts_with("motiv")), iowaInterest$Grade
       , psych::alpha
     )
-    , function(x) x$total   
+    , function(x) x$item.stats   
   )
   # gr 1 .75 (.79)
   # g4 2 .68 (.70)
   # gr 3 .64 (.66)
-  # gr 4 .70 (.73)
+  # gr 4 .70 (.71)
   # gr 5 .67 (.71)
-  # gr 6 .74 (.78)
+  # gr 6 .72 (.77)
   # 
   # in all grades, the correlation between item 5, and the others (r.drop) is
   # very weak, resulting in reduced reliabilities (parenthesis are the alpha

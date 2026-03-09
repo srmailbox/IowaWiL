@@ -11,6 +11,7 @@
 # 2026-01-28: Massive overhaul to split the analysis into gr1-3, and gr4-6 to
 #   overcome an issue with missingness in the covariance structures.
 # 2026-03-05: updated with new data from the next wave of analyses
+# 2026-03-09: corrected Year 5 data
 
 # 0.0 Setup ####
 include(lavaan)
@@ -210,7 +211,7 @@ rbind(gr13=fitmeasures(q1.gr13.SEM, fit.measures = c("rmsea", "srmr", "tli", "cf
 # Mixed - some measures do better than others
 #      rmsea  srmr   tli   cfi  agfi
 # gr13 0.088 0.066 0.872 0.954 0.699
-# gr46 0.109 0.067 0.882 0.957 0.793
+# gr46 0.107 0.066 0.887 0.959 0.795
 # 
 # RMSEA is ok for 13, but not 46, SRMR is good, TLI borderline, CFI good, AGFI weak
 
@@ -233,7 +234,7 @@ merge(parameterEstimates(q1.gr13.SEM)
             )
         )
       , by=c("lhs", "op", "rhs"), suffixes=c(".gr13", ".gr46")) %>%
-  arrange(lhs) %>% 
+  arrange(lhs, rhs) %>% 
   write.csv(file="Iowa.q1.results.csv")
 
 # 2026-03-04: Nothing of substance changes.

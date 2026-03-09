@@ -11,17 +11,18 @@
 
 # 0.0 Setup ####
 include(readxl)
-
+include(lavaan)
 # 1.0 Data ####
 iowaReading = read_xlsx("ReadAnx_Scores.xlsx", sheet="ReadAnx_Scores") %>% 
-  select(participantID, Sample, Truegrade, starts_with("CC2"), starts_with("GORT"))
+  select(participantID, Sample, Grade, starts_with("CC2"), starts_with("GORT")) %>% 
+  mutate(across(-Sample, as.numeric))
 # str(iowaData) # All looks good
 
 # 2.0 Correlations of reading scores by grade ####
 # This will take each variable, look up the Options for that variable and,
 # if necessary, recode it.
 
-iowaReadingCorsbyGrade = tapply(iowaReading, iowaReading$Truegrade
+iowaReadingCorsbyGrade = tapply(iowaReading, iowaReading$Grade
        , function(x)
          cor(x %>% 
                rename(GORTFlu = GORT_Fluency, GORTComp=GORT_Comprehension) %>% 
@@ -36,8 +37,8 @@ semMod = '
 '
 
 # by grade
-iowaG1to6 = iowaReading %>% filter(Truegrade<=6)
-tapply(iowaG1to6, iowaG1to6$Truegrade
+iowaG1to6 = iowaReading %>% filter(Grade<=6)
+tapply(iowaG1to6, iowaG1to6$Grade
        #       , function(x) {cfa(semMod, x, missing="fiml", orthogonal=T, std.lv=T, std.ov=T) %>% parameterestimates() %>% filter(op=="=~")}
        , function(x) {cfa(semMod2, x, missing="fiml", orthogonal=T, std.lv=T, std.ov=T) %>% lavPredict %>% psych::describe()}
 ) %>% bind_rows()
@@ -48,7 +49,7 @@ semMod2 = '
   Reading =~ CC2irr+CC2nw+GORT_Fluency+GORT_Comprehension
 '
 
-tapply(iowaG1to6, iowaG1to6$Truegrade
+tapply(iowaG1to6, iowaG1to6$Grade
        , function(x) {cfa(semMod2, x, missing="fiml", orthogonal=T, std.lv=T, std.ov=T) %>% lavPredict %>% psych::describe()}
 ) %>% bind_rows()
 
