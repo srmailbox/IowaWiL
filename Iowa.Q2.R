@@ -8,6 +8,7 @@
 # Created: 2026-01-30
 # Author: Serje Robidoux
 # CHANGELOG:
+# 
 
 # 0.0 Setup ####
 include(lavaan)
@@ -17,7 +18,7 @@ include(semTools)
 
 source("Iowa.Data.R")
 
-q2Data = iowaData %>% select(participant, Grade, Fi, Fsbr, RI) %>% 
+q2Data = iowaData %>% select(participant, Grade, Fi, Fsbr, starts_with("motiv"), RI) %>% 
   filter(Grade < 7)
 
 ## 1.1 Add the earliest grade, and number of years of participation ###
@@ -42,12 +43,18 @@ q2Data = q2Data %>%
 
 q2.gr13.SEMData = q2Data %>% 
   filter(incl13) %>% 
-  pivot_wider(id_cols=participant, values_from=c(Fi, Fsbr, RI), names_from=Grade) %>% 
+  pivot_wider(id_cols=participant
+              , values_from=c(Fi, Fsbr, RI, starts_with("motiv"))
+              , names_from=Grade
+              ) %>% 
   mutate(across(starts_with("RI"), ~as.numeric(scale(.))))
 
 q2.gr46.SEMData = q2Data %>% 
   filter(incl46) %>% 
-  pivot_wider(id_cols=participant, values_from=c(Fi, Fsbr, RI), names_from=Grade) %>% 
+  pivot_wider(id_cols=participant
+              , values_from=c(Fi, Fsbr, RI, starts_with("motiv"))
+              , names_from=Grade
+              ) %>% 
   mutate(across(starts_with("RI"), ~as.numeric(scale(.))))
 
 q2.gr13.SEMAnalysis = q2.gr13.SEMData  %>% 
@@ -84,23 +91,26 @@ q2.gr46.SEMAnalysis = q2.gr46.SEMData  %>%
          , any_vars = rowMaxes(pick(ends_with("vals"), -all_vars))>0
          # ,two_years = rowMaxes(select(.,ends_with("vals")))>1
   ) %>% 
-  filter(!(any_vars & all_vars)) %>% data.frame
+  # filter(!(any_vars & all_vars)) %>% data.frame
   filter(any_vars) %>% 
   filter(all_vars) %>%
   # filter(two_years) %>% select(-two_years) %>% 
   select(-ends_with("_vars"))
 
-# I lose 29 of 257 - 1 due to missing SBR, and the remaining due to missing Interest.
-# 2026-03-05: This is odd, because it leaves me with the same set of kids I had
-#  before the data was updated.... so all 22 "new kids" are now excluded.
-# 
-# Still have 34% missingness
-#  Fi_4   Fi_5   Fi_6 Fsbr_4 Fsbr_5 Fsbr_6   RI_4   RI_5   RI_6 
-# 0.039  0.320  0.671  0.039  0.320  0.671  0.031  0.316  0.671 
+# I lose 4 of 257 - 1 due to missing SBR, and the remaining due to missing Interest.
+
+# Now have just 17% missingness, and mostly gr 6 as expected
+#  Fi_4        Fi_5        Fi_6      Fsbr_4      Fsbr_5      Fsbr_6        RI_4        RI_5       RI_6
+# 0.040       0.154       0.415       0.040       0.154       0.415       0.040       0.154      0.415
 
 ## 2.2 Models ####
 
 q2.gr13.SEMModel = '
+# Latent Vars for RI which will force an average score
+RI_1 =~ 1*motiv_1_1 + 1*motiv_2_1 + 1*motiv_3_1 + 1*motiv_4_1
+RI_2 =~ 1*motiv_1_2 + 1*motiv_2_2 + 1*motiv_3_2 + 1*motiv_4_2
+RI_3 =~ 1*motiv_1_3 + 1*motiv_2_3 + 1*motiv_3_3 + 1*motiv_4_3
+
 # Cross-lagged paths
 RI_2 ~ Fi_1+Fsbr_1
 RI_3 ~ Fi_2+Fsbr_2
@@ -133,54 +143,32 @@ Fsbr_3 ~~ RI_3
 '
 
 q2.gr46.SEMModel = '
+# Latent Vars for RI which will force an average score
+RI_4 =~ 1*motiv_1_4 + 1*motiv_2_4 + 1*motiv_3_4 + 1*motiv_4_4
+RI_5 =~ 1*motiv_1_5 + 1*motiv_2_5 + 1*motiv_3_5 + 1*motiv_4_5
+RI_6 =~ 1*motiv_1_6 + 1*motiv_2_6 + 1*motiv_3_6 + 1*motiv_4_6
+
 # Cross-lagged paths
-# RI_2 ~ Fi_1+Fsbr_1
-# RI_3 ~ Fi_2+Fsbr_2
-# RI_4 ~ Fi_3+Fsbr_3
 RI_5 ~ Fi_4+Fsbr_4
 RI_6 ~ Fi_5+Fsbr_5
 
-# Fi_2 ~ RI_1
-# Fi_3 ~ RI_2
-# Fi_4 ~ RI_3
 Fi_5 ~ RI_4
 Fi_6 ~ RI_5
 
-# Fsbr_2 ~ RI_1
-# Fsbr_3 ~ RI_2
-# Fsbr_4 ~ RI_3
 Fsbr_5 ~ RI_4
 Fsbr_6 ~ RI_5
 
 # Auto-regressive paths (Stability)
-# RI_2 ~ RI_1
-# RI_3 ~ RI_2
-# RI_4 ~ RI_3
 RI_5 ~ RI_4
 RI_6 ~ RI_5
 
-# Fi_2 ~ Fi_1
-# Fi_3 ~ Fi_2
-# Fi_4 ~ Fi_3
 Fi_5 ~ Fi_4
 Fi_6 ~ Fi_5
 
-# Fsbr_2 ~ Fsbr_1
-# Fsbr_3 ~ Fsbr_2
-# Fsbr_4 ~ Fsbr_3
 Fsbr_5 ~ Fsbr_4
 Fsbr_6 ~ Fsbr_5
 
 # Reciprocal effects
-# Fi_1 ~~ RI_1 + Fsbr_1
-# Fsbr_1 ~~ RI_1
-# 
-# Fi_2 ~~ RI_2 + Fsbr_2
-# Fsbr_2 ~~ RI_2
-# 
-# Fi_3 ~~ RI_3 + Fsbr_3
-# Fsbr_3 ~~ RI_3
-
 Fi_4 ~~ RI_4 + Fsbr_4
 Fsbr_4 ~~ RI_4
 
@@ -193,21 +181,21 @@ Fsbr_6 ~~ RI_6
 
 ## 2.3 Fitting ####
 
-q2.gr13.SEM = cfa(q2.gr13.SEMModel, q2.gr13.SEMAnalysis, missing="fiml", orthogonal=T)
+q2.gr13.SEM = cfa(q2.gr13.SEMModel, q2.gr13.SEMAnalysis %>% select(-starts_with("RI")), missing="fiml", orthogonal=T)
 
-q2.gr46.SEM = cfa(q2.gr46.SEMModel, q2.gr46.SEMAnalysis, missing="fiml", orthogonal=T)
+q2.gr46.SEM = cfa(q2.gr46.SEMModel, q2.gr46.SEMAnalysis %>% select(-starts_with("RI")), missing="fiml", orthogonal=T)
 
 
 ## 2.5 Fits ####
 rbind(gr13=fitmeasures(q2.gr13.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))
-, gr46=fitmeasures(q2.gr46.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi")))
+, gr46=fitmeasures(q2.gr46.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))) %>% 
+  round(3)
 
 #      rmsea  srmr   tli   cfi  agfi
-# gr13 0.063 0.062 0.861 0.950 0.960
-# gr46 0.090 0.129 0.742 0.907 0.971
+# gr13 0.068 0.100 0.756 0.797 0.956
+# gr46 0.093 0.127 0.720 0.767 0.921
 # 
-# gr13 is very good
-# gr46 is weaker, with rmsea srmr not so sure, cfi agfi ok
+# not great.
 
 # 3.0 Output results ####
 
