@@ -176,7 +176,7 @@ iowaInterest = read_xlsx('ReadAnx_CMQ_item.xlsx', sheet='ReadAnx_CMQ_item') %>%
     iowaInterest %>% 
     mutate(
       nNA = rowSums(across(c(starts_with("motiv"),-motiv_5), is.na))
-      , RI = ifelse(nNA<3,rowMeans(pick(starts_with("motiv"), -motiv_5), na.rm=T), NA)
+      , RI = ifelse(nNA<5,rowMeans(pick(starts_with("motiv"), -motiv_5), na.rm=T), NA)
     )
 ) %>% select(nNA) %>% table()
 

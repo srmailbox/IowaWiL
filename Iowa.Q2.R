@@ -107,23 +107,23 @@ q2.gr46.SEMAnalysis = q2.gr46.SEMData  %>%
 
 q2.gr13.SEMModel = '
 # Latent Vars for RI which will force an average score
-lvRI_1 =~ 1*motiv_1_1 + 1*motiv_2_1 + 1*motiv_3_1 + 1*motiv_4_1
-lvRI_2 =~ 1*motiv_1_2 + 1*motiv_2_2 + 1*motiv_3_2 + 1*motiv_4_2
-lvRI_3 =~ 1*motiv_1_3 + 1*motiv_2_3 + 1*motiv_3_3 + 1*motiv_4_3
+# RI_1 =~ 1*motiv_1_1 + 1*motiv_2_1 + 1*motiv_3_1 + 1*motiv_4_1
+# RI_2 =~ 1*motiv_1_2 + 1*motiv_2_2 + 1*motiv_3_2 + 1*motiv_4_2
+# RI_3 =~ 1*motiv_1_3 + 1*motiv_2_3 + 1*motiv_3_3 + 1*motiv_4_3
 
 # Cross-lagged paths
-lvRI_2 ~ Fi_1+Fsbr_1
-lvRI_3 ~ Fi_2+Fsbr_2
+RI_2 ~ Fi_1+Fsbr_1
+RI_3 ~ Fi_2+Fsbr_2
 
-Fi_2 ~ lvRI_1
-Fi_3 ~ lvRI_2
+Fi_2 ~ RI_1
+Fi_3 ~ RI_2
 
-Fsbr_2 ~ lvRI_1
-Fsbr_3 ~ lvRI_2
+Fsbr_2 ~ RI_1
+Fsbr_3 ~ RI_2
 
 # Auto-regressive paths (Stability)
-lvRI_2 ~ lvRI_1
-lvRI_3 ~ lvRI_2
+RI_2 ~ RI_1
+RI_3 ~ RI_2
 
 Fi_2 ~ Fi_1
 Fi_3 ~ Fi_2
@@ -132,35 +132,35 @@ Fsbr_2 ~ Fsbr_1
 Fsbr_3 ~ Fsbr_2
 
 # Reciprocal effects
-Fi_1 ~~ lvRI_1 + Fsbr_1
-Fsbr_1 ~~ lvRI_1
+Fi_1 ~~ RI_1 + Fsbr_1
+Fsbr_1 ~~ RI_1
 
-Fi_2 ~~ lvRI_2 + Fsbr_2
-Fsbr_2 ~~ lvRI_2
+Fi_2 ~~ RI_2 + Fsbr_2
+Fsbr_2 ~~ RI_2
 
-Fi_3 ~~ lvRI_3 + Fsbr_3
-Fsbr_3 ~~ lvRI_3
+Fi_3 ~~ RI_3 + Fsbr_3
+Fsbr_3 ~~ RI_3
 '
 
 q2.gr46.SEMModel = '
 # Latent Vars for RI which will force an average score
-lvRI_4 =~ 1*motiv_1_4 + 1*motiv_2_4 + 1*motiv_3_4 + 1*motiv_4_4
-lvRI_5 =~ 1*motiv_1_5 + 1*motiv_2_5 + 1*motiv_3_5 + 1*motiv_4_5
-lvRI_6 =~ 1*motiv_1_6 + 1*motiv_2_6 + 1*motiv_3_6 + 1*motiv_4_6
+# RI_4 =~ 1*motiv_1_4 + 1*motiv_2_4 + 1*motiv_3_4 + 1*motiv_4_4
+# RI_5 =~ 1*motiv_1_5 + 1*motiv_2_5 + 1*motiv_3_5 + 1*motiv_4_5
+# RI_6 =~ 1*motiv_1_6 + 1*motiv_2_6 + 1*motiv_3_6 + 1*motiv_4_6
 
 # Cross-lagged paths
-lvRI_5 ~ Fi_4+Fsbr_4
-lvRI_6 ~ Fi_5+Fsbr_5
+RI_5 ~ Fi_4+Fsbr_4
+RI_6 ~ Fi_5+Fsbr_5
 
-Fi_5 ~ lvRI_4
-Fi_6 ~ lvRI_5
+Fi_5 ~ RI_4
+Fi_6 ~ RI_5
 
-Fsbr_5 ~ lvRI_4
-Fsbr_6 ~ lvRI_5
+Fsbr_5 ~ RI_4
+Fsbr_6 ~ RI_5
 
 # Auto-regressive paths (Stability)
-lvRI_5 ~ lvRI_4
-lvRI_6 ~ lvRI_5
+RI_5 ~ RI_4
+RI_6 ~ RI_5
 
 Fi_5 ~ Fi_4
 Fi_6 ~ Fi_5
@@ -169,24 +169,27 @@ Fsbr_5 ~ Fsbr_4
 Fsbr_6 ~ Fsbr_5
 
 # Reciprocal effects
-Fi_4 ~~ lvRI_4 + Fsbr_4
-Fsbr_4 ~~ lvRI_4
+Fi_4 ~~ RI_4 + Fsbr_4
+Fsbr_4 ~~ RI_4
 
-Fi_5 ~~ lvRI_5 + Fsbr_5
-Fsbr_5 ~~ lvRI_5
+Fi_5 ~~ RI_5 + Fsbr_5
+Fsbr_5 ~~ RI_5
 
-Fi_6 ~~ lvRI_6 + Fsbr_6
-Fsbr_6 ~~ lvRI_6
+Fi_6 ~~ RI_6 + Fsbr_6
+Fsbr_6 ~~ RI_6
 '
 
 ## 2.3 Fitting ####
 
 q2.gr13.SEM = cfa(q2.gr13.SEMModel
-                  , q2.gr13.SEMAnalysis %>% select(-starts_with("RI"))
+                  , q2.gr13.SEMAnalysis #%>% select(-starts_with("RI"))
                   , missing="fiml"#, orthogonal=T
                   )
 
-q2.gr46.SEM = cfa(q2.gr46.SEMModel, q2.gr46.SEMAnalysis %>% select(-starts_with("RI")), missing="fiml", orthogonal=T)
+q2.gr46.SEM = cfa(q2.gr46.SEMModel
+                  , q2.gr46.SEMAnalysis #%>% select(-starts_with("RI"))
+                  , missing="fiml"#, orthogonal=T
+                  )
 
 
 ## 2.5 Fits ####
@@ -194,11 +197,11 @@ rbind(gr13=fitmeasures(q2.gr13.SEM, fit.measures = c("rmsea", "srmr", "tli", "cf
 , gr46=fitmeasures(q2.gr46.SEM, fit.measures = c("rmsea", "srmr", "tli", "cfi", "agfi"))) %>% 
   round(3)
 
-#      rmsea  srmr   tli   cfi  agfi
-# gr13 0.068 0.100 0.756 0.797 0.956
-# gr46 0.093 0.127 0.720 0.767 0.921
+#      rmsea  srmr  tli   cfi  agfi
+# gr13 0.056 0.061 0.90 0.964 0.827
+# gr46 0.088 0.067 0.87 0.953 0.853
 # 
-# not great.
+# pretty good, especially for gr13
 
 # 3.0 Output results ####
 
@@ -235,18 +238,18 @@ if(FALSE){
   q2.gr13.SEMModel.prsmny =
     '
 # Cross-lagged paths
-#lvRI_2 ~ Fi_1+Fsbr_1
-#lvRI_3 ~ Fi_2+Fsbr_2
+#RI_2 ~ Fi_1+Fsbr_1
+#RI_3 ~ Fi_2+Fsbr_2
 
-Fi_2 ~ lvRI_1
-Fi_3 ~ lvRI_2
+Fi_2 ~ RI_1
+Fi_3 ~ RI_2
 
-#Fsbr_2 ~ lvRI_1
-#Fsbr_3 ~ lvRI_2
+#Fsbr_2 ~ RI_1
+#Fsbr_3 ~ RI_2
 
 # Auto-regressive paths (Stability)
-lvRI_2 ~ lvRI_1
-lvRI_3 ~ lvRI_2
+RI_2 ~ RI_1
+RI_3 ~ RI_2
 
 Fi_2 ~ Fi_1
 Fi_3 ~ Fi_2
@@ -255,14 +258,14 @@ Fsbr_2 ~ Fsbr_1
 Fsbr_3 ~ Fsbr_2
 
 # Reciprocal effects
-Fi_1 ~~ lvRI_1 + Fsbr_1
-Fsbr_1 ~~ lvRI_1
+Fi_1 ~~ RI_1 + Fsbr_1
+Fsbr_1 ~~ RI_1
 
-Fi_2 ~~ lvRI_2 + Fsbr_2
-#Fsbr_2 ~~ lvRI_2
+Fi_2 ~~ RI_2 + Fsbr_2
+#Fsbr_2 ~~ RI_2
 
-Fi_3 ~~Fsbr_3 # + lvRI_3
-# Fsbr_3 ~~ lvRI_3
+Fi_3 ~~Fsbr_3 # + RI_3
+# Fsbr_3 ~~ RI_3
 '
   
   #### 4.1.1.1 Gr 1-3 Fit Parsimonious ####

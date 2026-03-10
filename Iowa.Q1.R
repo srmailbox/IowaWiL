@@ -286,3 +286,4 @@ Fi_3 ~~Fsbr_3 # + RF_3
 #### 4.1.1.1 Gr 1-3 Fit Parsimonious ####
 
 q1.gr13.SEM.prsmny = cfa(q1.gr13.SEMModel.prsmny, q1.gr13.SEMAnalysis, orthogonal=T, missing="fiml")
+
