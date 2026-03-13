@@ -160,8 +160,16 @@ iowaEnv=merge(iowaEnv, cfaRes, all.x=T)
 # 2026-03-05: Grade is now computed and included in the dataset
 iowaReading = read_xlsx("ReadAnx_Scores.xlsx", sheet="ReadAnx_Scores") %>%
   mutate(across(-Sample, as.numeric)) %>% 
-  select(participantID, Sample, Grade, starts_with("CC2"), starts_with("GORT"))
+  select(participantID, Sample, Grade, starts_with("CC2"), starts_with("GORT")
+         , starts_with("TOWRE"))
 
+# iowaReading %>%
+#   mutate(across(-Grade, is.na)) %>%
+#   select(
+#     Grade, TOWREdec
+#   ) %>% table
+#  ok so we have CC2 until Grade 6, but the proportion drops after Gr 4.
+#  TOWRE is the reverse - only really available for 5 and 6, with some 4.
 
 ## 1.4 Reading Interest ####
 # We pre-registered just using the mean of the 5 CMQ items:
